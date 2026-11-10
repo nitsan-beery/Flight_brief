@@ -1,7 +1,6 @@
-// דפית הטיסה במסך האפליקציה: ערכים מהתדריך (בלי תיבה, עם אייקון מקור) ושדות להזנה ידנית.
+// דפית הטיסה במסך האפליקציה: ערכים מהתדריך (בלי תיבה) ושדות להזנה ידנית. בלי קישורים לקובץ (החלטת הבעלים).
 // requirements.md, סעיפים 5.1 ו-5.1.1.
 
-export const ICON_SOURCE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/></svg>';
 export const MISSING = 'לא נמצא';
 
 /** ערכי ברירת המחדל של השדות הידניים. B.F מתחיל מערך התכנון. */
@@ -12,13 +11,12 @@ export function emptyManual(brief) {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const val = (f) => (f.missing ? MISSING : f.value);
-const src = (keys, label) => `<button type="button" class="src" data-src="${keys}" aria-label="המקור בתדריך: ${label}">${ICON_SOURCE}</button>`;
 
 function briefCell(label, keys, fields) {
   const fs = keys.split(',').map((k) => fields[k]);
   const missing = fs.some((f) => f.missing);
   const text = fs.map(val).join(' – ');
-  return `<div class="cell"><div class="lb">${label}</div><div class="v${missing ? ' missing' : ''}">${esc(text)}${src(keys, label)}</div></div>`;
+  return `<div class="cell"><div class="lb">${label}</div><div class="v${missing ? ' missing' : ''}">${esc(text)}</div></div>`;
 }
 
 function inputCell(label, key, value, mode) {
@@ -32,7 +30,7 @@ function crewCell(label, list, names) {
 
 /**
  * בונה את הדפית בתוך slot.
- * @param {{onChange:(manual)=>void, onSource:(keys:string[])=>void}} on
+ * @param {{onChange:(manual)=>void}} on
  * @returns {HTMLElement} הדפית עצמה (כדי שאפשר יהיה להעביר אותה לחלון צף ב-Windows)
  */
 export function renderSheet(slot, brief, manual, on) {
@@ -44,7 +42,7 @@ export function renderSheet(slot, brief, manual, on) {
   el.id = 'sheet';
   el.innerHTML = `
     <div class="fs-head">
-      <div><div class="fs-flight">${esc(brief.flight)}${src('header', 'כותרת')}</div><div class="fs-route">${esc(`${brief.org} → ${brief.dst} · ${brief.reg} · ${type}`)}</div></div>
+      <div><div class="fs-flight">${esc(brief.flight)}</div><div class="fs-route">${esc(`${brief.org} → ${brief.dst} · ${brief.reg} · ${type}`)}</div></div>
       <div class="fs-meta">${esc(val(f.date))}<br>OFP ${esc(brief.ofp)}</div>
     </div>
     <div class="sec">זמנים</div>
@@ -52,7 +50,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="sec">דלק ומשקל</div>
     <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       ${briefCell('T.F', 'tf', f)}${briefCell('T.O.W', 'tow', f)}
-      <div class="cell"><div class="lb">B.F (${esc(plan ?? MISSING)})${src('bf', 'B.F')}</div><input data-k="bf" inputmode="decimal" autocomplete="off" value="${esc(manual.bf)}" aria-label="B.F"></div>
+      <div class="cell"><div class="lb">B.F (${esc(plan ?? MISSING)})</div><input data-k="bf" inputmode="decimal" autocomplete="off" value="${esc(manual.bf)}" aria-label="B.F"></div>
     </div>
     <div class="sec">צוות</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));align-items:start">${crewCell('קבינה', 'cab', manual.cab)}${crewCell('קוקפיט', 'ck', manual.ck)}</div>
@@ -60,7 +58,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
     <div class="sec">OPT</div>
     <div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">${inputCell('N1', 'n1', manual.n1, 'decimal')}${inputCell('V1', 'v1', manual.v1, 'numeric')}${inputCell('VR', 'vr', manual.vr, 'numeric')}${inputCell('V2', 'v2', manual.v2, 'numeric')}</div>
-    <div class="legend"><span>${ICON_SOURCE} מהתדריך</span><span><i class="box"></i> הזנה ידנית</span><span>כלי עזר בלבד</span></div>`;
+    <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');
   const markBf = () => bfInput.classList.toggle('chg', plan !== null && bfInput.value.trim() !== plan);
@@ -88,10 +86,7 @@ export function renderSheet(slot, brief, manual, on) {
       box.append(input);
       input.focus();
       on.onChange(manual);
-      return;
     }
-    const s = e.target.closest('[data-src]');
-    if (s) on.onSource(s.dataset.src.split(','));
   });
 
   slot.replaceChildren(el);

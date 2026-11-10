@@ -1,7 +1,7 @@
 /* צבעים: בהיר, כהה לפי המכשיר, וכהה/בהיר שנבחר בכפתור (data-theme). requirements.md, 5.1.1. */
-:root{--bg:#f1efe8;--sheet:#ffffff;--card:#f6f5f1;--fld:#ffffff;--tx:#1f1e1c;--tx2:#5f5e5a;--tx3:#888780;--ln:rgba(0,0,0,.12);--bx:rgba(0,0,0,.28);--ac:#185FA5;--ok:#3B6D11;--bad:#A32D2D;--mark:rgba(239,159,39,.35)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121211;--sheet:#1b1b1a;--card:#262624;--fld:#1b1b1a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595;--mark:rgba(239,159,39,.45)}}
-:root[data-theme="dark"]{--bg:#121211;--sheet:#1b1b1a;--card:#262624;--fld:#1b1b1a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595;--mark:rgba(239,159,39,.45)}
+:root{--bg:#f1efe8;--sheet:#ffffff;--card:#f6f5f1;--fld:#ffffff;--tx:#1f1e1c;--tx2:#5f5e5a;--tx3:#888780;--ln:rgba(0,0,0,.12);--bx:rgba(0,0,0,.28);--ac:#185FA5;--ok:#3B6D11;--bad:#A32D2D}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121211;--sheet:#1b1b1a;--card:#262624;--fld:#1b1b1a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595}}
+:root[data-theme="dark"]{--bg:#121211;--sheet:#1b1b1a;--card:#262624;--fld:#1b1b1a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595}
 :root{color-scheme:light dark}
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{color-scheme:dark}
@@ -77,21 +77,8 @@ button svg,.back svg{width:18px;height:18px}
 .fs input.chg{color:var(--ac)}
 .fs input.nm{font-size:16px;direction:rtl;text-align:right;margin-bottom:6px}
 .fs .add{font-size:13px;color:var(--ac);background:none;border:none;padding:0;direction:rtl;display:flex;margin-left:auto}
-.src{border:none;background:none;padding:2px;color:var(--tx3);border-radius:4px}
-.src svg{width:14px;height:14px}
-.src:hover{color:var(--ac)}
-.legend{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--tx2);direction:rtl}
-.legend span{display:inline-flex;align-items:center;gap:4px}
-.legend .box{display:inline-block;width:18px;height:12px;border:1px solid var(--bx);border-radius:3px;background:var(--fld)}
-.legend svg{width:13px;height:13px}
+.legend{margin-top:16px;font-size:12px;color:var(--tx2);direction:rtl}
 
-/* תצוגת המקור בתדריך */
-#source{border:none;border-radius:14px;padding:0;width:min(940px,96vw);max-height:92vh;background:var(--sheet);color:var(--tx)}
-#source::backdrop{background:rgba(0,0,0,.45)}
-.src-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--ln);position:sticky;top:0;background:var(--sheet)}
-#source-body{overflow:auto;max-height:calc(92vh - 52px);padding:12px;background:var(--card)}
-#source-page{position:relative;margin:0 auto;width:max-content;background:#fff}
-#source-mark{position:absolute;background:var(--mark);border:2px solid #EF9F27;border-radius:3px;pointer-events:none}
 
 /* הווידאו של החלון הצף: חייב להיות במסמך ולנגן, אבל לא נראה. */
 #pip-canvas{position:fixed;left:-10000px;top:0}

@@ -13,7 +13,7 @@ function configureWorker() {
   workerConfigured = true;
 }
 
-/** פותח מסמך PDF. המסמך נשאר פתוח, כדי שאפשר יהיה גם לצייר ממנו עמוד (`renderPage`). */
+/** פותח מסמך PDF. */
 export async function openPdf(data) {
   configureWorker();
   return pdfjs.getDocument({ data: toBytes(data), useSystemFonts: true, isEvalSupported: false }).promise;
@@ -36,23 +36,6 @@ export async function extractPage(doc, pageNumber) {
   }
   page.cleanup();
   return { width: vp.width, height: vp.height, items };
-}
-
-/** מצייר עמוד על canvas ברוחב נתון בפיקסלים. מחזיר את קנה המידה ביחס ליחידות PDF. */
-export async function renderPage(doc, pageNumber, canvas, cssWidth) {
-  const page = await doc.getPage(pageNumber);
-  const base = page.getViewport({ scale: 1 });
-  const scale = cssWidth / base.width;
-  const ratio = globalThis.devicePixelRatio || 1;
-  const vp = page.getViewport({ scale: scale * ratio });
-  canvas.width = Math.floor(vp.width);
-  canvas.height = Math.floor(vp.height);
-  canvas.style.width = `${cssWidth}px`;
-  canvas.style.height = `${Math.floor(vp.height / ratio)}px`;
-  // intent 'print': ציור ברצף אחד. בברירת המחדל PDF.js מחלק את הציור לפי requestAnimationFrame,
-  // שלא רץ כשהדף ברקע, והציור נתקע.
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, intent: 'print' }).promise;
-  return scale;
 }
 
 // PDF.js דורש Uint8Array משלו: הוא מעביר את הבאפר ל-worker. לכן תמיד עותק, כדי שהמקור יישאר שמיש.

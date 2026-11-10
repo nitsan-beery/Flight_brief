@@ -5,11 +5,10 @@ import { openPdf, extractPage } from './pdf/extract.js';
 import { parseBrief, briefLabel, sameFlight } from './brief.js';
 import { renderSheet, emptyManual } from './sheet.js';
 import { createFloat } from './float.js';
-import { createSource } from './source.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 5;
+const APP_VERSION = 6;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -43,7 +42,7 @@ function toggleTheme() {
   float.update();
 }
 
-// ---- החלון הצף והמקור בתדריך ----
+// ---- החלון הצף ----
 
 const float = createFloat({
   canvas: $('#pip-canvas'),
@@ -57,18 +56,6 @@ const float = createFloat({
   },
   onDocClosed: () => { if (location.hash === '#sheet') renderSheetView(); },
 });
-
-const source = createSource({
-  dialog: $('#source'), body: $('#source-body'), page: $('#source-page'),
-  canvas: $('#source-canvas'), mark: $('#source-mark'),
-  getBytes: () => current?.bytes ?? null,
-});
-
-function openSource(keys) {
-  const f = current.brief.fields;
-  const boxes = keys.map((k) => (k === 'header' ? current.brief.headerBox : f[k]?.box));
-  source.open(boxes).catch(() => {});
-}
 
 function hideFloatMsg() { $('#float-msg').hidden = true; }
 
@@ -119,7 +106,6 @@ function renderSheetView() {
   if (float.docOpen()) { showSheetPlacement(); return; }
   sheetEl = renderSheet($('#sheet-slot'), current.brief, current.manual, {
     onChange: (manual) => { current.manual = manual; float.update(); scheduleSave(); },
-    onSource: openSource,
   });
   showSheetPlacement();
   float.prepare();
