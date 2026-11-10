@@ -23,6 +23,11 @@ function inputCell(label, key, value, mode) {
   return `<div class="cell"><div class="lb">${label}</div><input data-k="${key}" inputmode="${mode}" autocomplete="off" value="${esc(value)}" aria-label="${label}"></div>`;
 }
 
+/** תיבה אחת בתוך משבצת המהירויות של OPT (requirements.md, 5.1.1). */
+function speed(label, key, value) {
+  return `<div><div class="lb">${label}</div><input data-k="${key}" inputmode="numeric" autocomplete="off" value="${esc(value)}" aria-label="${label}"></div>`;
+}
+
 function crewCell(label, list, names) {
   const rows = (names.length ? names : ['']).map((n, i) => `<input class="nm" data-list="${list}" data-i="${i}" placeholder="שם" autocomplete="off" value="${esc(n)}" aria-label="${label} ${i + 1}">`).join('');
   return `<div class="cell"><div class="lb heb">${label}</div><div class="names" data-list="${list}">${rows}</div><button type="button" class="add" data-add="${list}">+ הוסף</button></div>`;
@@ -57,7 +62,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
     <div class="sec">OPT</div>
-    <div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">${inputCell('N1', 'n1', manual.n1, 'decimal')}${inputCell('V1', 'v1', manual.v1, 'numeric')}${inputCell('VR', 'vr', manual.vr, 'numeric')}${inputCell('V2', 'v2', manual.v2, 'numeric')}</div>
+    <div class="grid opt">${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
     <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');

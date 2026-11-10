@@ -67,6 +67,9 @@ button svg,.back svg{width:18px;height:18px}
 .fs-meta{font-size:12px;color:var(--tx2);text-align:right}
 .fs .sec{font-size:14px;color:var(--tx2);margin:16px 0 8px;direction:rtl}
 .fs .grid{display:grid;gap:10px}
+.fs .grid.opt{grid-template-columns:minmax(0,1fr) minmax(0,3fr);column-gap:20px}
+.fs .speeds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fs .speeds>div{min-width:0}
 .fs .cell{background:var(--card);border-radius:10px;padding:10px 12px;min-width:0}
 .fs .lb{font-size:14px;color:var(--tx2);margin-bottom:4px;display:flex;align-items:center;gap:4px}
 .fs .heb{direction:rtl}

@@ -179,6 +179,20 @@ function drawSheet(canvas, brief, manual) {
   section('Loadsheet');
   cells([{ l: 'CG (MACTOW)', v: m('cg') }, { l: 'SOB', v: m('sob') }]);
   section('OPT');
-  cells([{ l: 'N1', v: m('n1') }, { l: 'V1', v: m('v1') }, { l: 'VR', v: m('vr') }, { l: 'V2', v: m('v2') }]);
+  // N1 במשבצת משלו, והמהירויות במשבצת אחת, ברווח כפול (requirements.md, 5.1.1).
+  {
+    const h = 72, gap = 2 * G, n1w = (IW - gap) / 4;
+    rr(M, y, n1w, h, 10, c.card);
+    txt('N1', M + 12, y + 23, 16, c.tx2);
+    txt(m('n1') || '—', M + 20, y + 55, 21, c.tx);
+    const sx = M + n1w + gap, sw = IW - n1w - gap, inner = (sw - 24 - 2 * G) / 3;
+    rr(sx, y, sw, h, 10, c.card);
+    [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => {
+      const x = sx + 12 + i * (inner + G);
+      txt(l, x, y + 23, 16, c.tx2);
+      txt(m(k) || '—', x + 8, y + 55, 21, c.tx);
+    });
+    y += h + 22;
+  }
   txt('כלי עזר בלבד', W - M, H - 20, 13, c.tx2, { rtl: true, align: 'right' });
 }
