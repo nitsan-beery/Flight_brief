@@ -8,7 +8,7 @@ import { createFloat } from './float.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 10;
+const APP_VERSION = 11;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -99,7 +99,7 @@ function route() {
 function renderHome() {
   const drop = $('#drop');
   drop.classList.toggle('loaded', !!current);
-  $('#outputs').hidden = !current;
+  $('#float-box').hidden = !current;
   if (current) {
     $('.drop-label').textContent = briefLabel(current.brief);
     $('.drop-name').textContent = current.fileName;
@@ -187,6 +187,7 @@ function wireDrop() {
   drop.addEventListener('click', (e) => {
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
     if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
+    if (e.target.closest('.drop-sheet')) { e.preventDefault(); history.pushState({ fromHome: true }, '', '#sheet'); route(); return; }
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
   });
   drop.addEventListener('dragover', (e) => { e.preventDefault(); });
@@ -226,15 +227,10 @@ async function start() {
   $('#float-btn').addEventListener('click', onFloatButton);
   for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', hideFloatMsg);
   for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
-  $('.float-toggle').addEventListener('click', () => {
-    const open = $('#float-group').classList.toggle('open');
-    $('.float-toggle').setAttribute('aria-expanded', String(open));
-  });
   $('.back').addEventListener('click', (e) => {
     e.preventDefault();
     if (history.state?.fromHome) history.back(); else { history.replaceState(null, '', location.pathname); route(); }
   });
-  $('.output').addEventListener('click', (e) => { e.preventDefault(); history.pushState({ fromHome: true }, '', '#sheet'); route(); });
   addEventListener('popstate', route);
   addEventListener('hashchange', route);
   wireDrop();

@@ -244,11 +244,11 @@ function drawFull(canvas, brief, manual) {
 /** המראה: רק OPT, בלי כותרת. N1 ממורכז למעלה, והמהירויות בשלוש משבצות נפרדות מתחתיו. */
 function drawTakeoff(canvas, brief, manual) {
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
-  const h = 96, gap = 16, cw = (IW - 2 * gap) / 3;
+  const h = 80, gap = 16, cw = (IW - 2 * gap) / 3;
   const H = M + h + gap + h + M;
   const p = setup(canvas, H);
   const m = (k) => manualVal(manual, k);
-  const big = { ls: 17, vs: 36 };
+  const big = { ls: 15, vs: 28 };
   cell(p, M + cw + gap, M, cw, h, 'N1', m('n1'), big);
   [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, M + i * (cw + gap), M + h + gap, cw, h, l, m(k), big));
 }
