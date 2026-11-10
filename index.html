@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>תדריך טיסה</title>
+  <meta name="description" content="דפית טיסה מתוך תדריך הטיסה. הכול מחושב על המכשיר. כלי עזר בלבד.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f1efe8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="תדריך טיסה">
+  <script>
+    // ערכת הצבעים לפני הציור הראשון, כדי שלא יהבהב מסך בהיר במצב כהה.
+    try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch { /* אחסון חסום */ }
+  </script>
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <main>
+    <section id="home" class="screen">
+      <div class="bar">
+        <h1>תדריך טיסה</h1>
+        <button type="button" class="icon-btn theme-btn" aria-label="מצב בהיר או כהה"></button>
+      </div>
+
+      <label class="drop" id="drop">
+        <input type="file" accept="application/pdf,.pdf" hidden>
+        <span class="drop-title">תדריך</span>
+        <span class="drop-sub">קובץ PDF של תדריך הטיסה</span>
+        <span class="drop-state">לא נבחר קובץ</span>
+        <span class="drop-loaded">
+          <span class="drop-label" dir="ltr"></span>
+          <span class="drop-name" dir="ltr"></span>
+          <button type="button" class="drop-pick">בחר תדריך אחר</button>
+        </span>
+        <span class="drop-error" role="alert"></span>
+      </label>
+
+      <div id="outputs" hidden>
+        <h2 class="list-title">מה להציג</h2>
+        <a class="output" href="#sheet">
+          <span><span class="output-title">דפית טיסה</span><span class="output-sub">זמנים, דלק, צוות, <bdi>Loadsheet</bdi>, <bdi>OPT</bdi></span></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+
+      <footer class="foot">
+        <span>כלי עזר בלבד</span>
+        <span id="app-version"></span>
+        <button id="app-update" type="button" hidden></button>
+      </footer>
+    </section>
+
+    <section id="sheet-view" class="screen" hidden>
+      <div class="bar">
+        <a href="#" class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>חזרה</a>
+        <span class="bar-actions">
+          <button type="button" id="float-btn" class="pri"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg><span>חלון צף</span></button>
+          <button type="button" class="icon-btn theme-btn" aria-label="מצב בהיר או כהה"></button>
+        </span>
+      </div>
+      <p id="float-msg" class="note" role="status" hidden></p>
+      <div id="sheet-slot"></div>
+      <p id="sheet-away" class="note" hidden>הדפית פתוחה בחלון הצף. אפשר לערוך בה שם.</p>
+    </section>
+  </main>
+
+  <dialog id="source" aria-label="המקור בתדריך">
+    <div class="src-bar">
+      <span id="source-title">תדריך, עמוד 1</span>
+      <button type="button" id="source-close" class="icon-btn" aria-label="סגירה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div id="source-body"><div id="source-page"><canvas id="source-canvas"></canvas><div id="source-mark"></div></div></div>
+  </dialog>
+
+  <!-- החלון הצף באייפד: הדפית מצוירת על canvas ומוזרמת לווידאו (requirements.md, 5.1.2). -->
+  <canvas id="pip-canvas" width="600" height="760" aria-hidden="true"></canvas>
+  <video id="pip-video" muted playsinline aria-hidden="true"></video>
+</body>
+</html>

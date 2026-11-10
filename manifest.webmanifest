@@ -1,0 +1,18 @@
+{
+  "name": "תדריך טיסה",
+  "short_name": "תדריך טיסה",
+  "description": "דפית טיסה מתוך תדריך הטיסה. כלי עזר בלבד.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1efe8",
+  "theme_color": "#f1efe8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
