@@ -9,7 +9,7 @@ import { createSource } from './source.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 2;
+const APP_VERSION = 3;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;

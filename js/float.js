@@ -146,7 +146,8 @@ function drawSheet(canvas, brief, manual) {
   txt(`OFP ${brief.ofp}`, W - M, 66, 15, c.tx2, { align: 'right' });
 
   let y = 112;
-  const section = (t) => { txt(t, W - M, y, 15, c.tx2, { rtl: true, align: 'right' }); y += 10; };
+  // כותרות: 16 בציור (14 במסך, באותו יחס לערכים). requirements.md, 5.1.1.
+  const section = (t) => { txt(t, W - M, y, 16, c.tx2, { rtl: true, align: 'right' }); y += 10; };
   const cells = (spec, h = 72) => {
     const total = spec.reduce((a, s) => a + (s.f || 1), 0);
     const unit = (IW - G * (spec.length - 1)) / total;
@@ -154,7 +155,7 @@ function drawSheet(canvas, brief, manual) {
     for (const s of spec) {
       const w = unit * (s.f || 1);
       rr(x, y, w, h, 10, c.card);
-      if (s.heb) txt(s.l, x + w - 12, y + 22, 14, c.tx2, { rtl: true, align: 'right' }); else txt(s.l, x + 12, y + 22, 14, c.tx2);
+      if (s.heb) txt(s.l, x + w - 12, y + 23, 16, c.tx2, { rtl: true, align: 'right' }); else txt(s.l, x + 12, y + 23, 16, c.tx2);
       if (s.lines) s.lines.forEach((n, k) => txt(n, x + w - 12, y + 48 + k * 24, 19, c.tx, { rtl: true, align: 'right' }));
       else txt(s.v || '—', x + 20, y + 55, s.missing ? 18 : 21, s.missing ? c.bad : (s.col || c.tx));
       x += w + G;

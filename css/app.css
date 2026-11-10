@@ -60,10 +60,10 @@ button svg,.back svg{width:18px;height:18px}
 .fs-flight{font-size:21px;font-weight:600;display:flex;align-items:center;gap:6px}
 .fs-route{font-size:14px;color:var(--tx2)}
 .fs-meta{font-size:12px;color:var(--tx2);text-align:right}
-.fs .sec{font-size:13px;color:var(--tx2);margin:16px 0 8px;direction:rtl}
+.fs .sec{font-size:14px;color:var(--tx2);margin:16px 0 8px;direction:rtl}
 .fs .grid{display:grid;gap:10px}
 .fs .cell{background:var(--card);border-radius:10px;padding:10px 12px;min-width:0}
-.fs .lb{font-size:12px;color:var(--tx2);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.fs .lb{font-size:14px;color:var(--tx2);margin-bottom:4px;display:flex;align-items:center;gap:4px}
 .fs .heb{direction:rtl}
 .fs .v{font-size:18px;line-height:36px;padding:0 9px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .fs .v.missing{font-size:15px;color:var(--bad)}
