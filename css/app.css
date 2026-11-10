@@ -56,6 +56,18 @@ button svg,.back svg{width:18px;height:18px}
 .output:hover{border-color:var(--ac)}
 .output-title{font-weight:600}
 .output svg{width:20px;height:20px;color:var(--tx2);flex:none}
+.output+.output{margin-top:8px}
+.float-group{display:block;padding:0}
+.float-group:hover{border-color:var(--ln)}
+.float-toggle{width:100%;justify-content:space-between;border:none;background:none;padding:12px 14px;border-radius:12px}
+.float-toggle .output-title{display:inline-flex;align-items:center;gap:8px}
+.float-toggle .chev{transition:transform .15s}
+.float-group.open .chev{transform:rotate(180deg)}
+.float-choices{display:none;gap:8px;padding:0 14px 14px}
+.float-group.open .float-choices{display:flex}
+.float-choices button{flex:1;justify-content:center;padding:10px 6px}
+.float-choices button[aria-pressed="true"]{background:var(--ac);color:var(--sheet)}
+#outputs .float-msg{margin-top:8px}
 .foot{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:40px;font-size:13px;color:var(--tx3)}
 .foot button{font-size:13px;padding:4px 10px;border-color:var(--ac);color:var(--ac)}
 

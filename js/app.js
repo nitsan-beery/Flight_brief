@@ -8,7 +8,7 @@ import { createFloat } from './float.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 7;
+const APP_VERSION = 8;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -49,22 +49,39 @@ const float = createFloat({
   video: $('#pip-video'),
   getData: () => current && { brief: current.brief, manual: current.manual },
   getSheet: () => sheetEl,
-  onState: (open) => {
+  onState: (open, mode) => {
     $('#float-btn span').textContent = open ? 'סגור חלון צף' : 'חלון צף';
+    for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(open && b.dataset.mode === mode));
     if (open) hideFloatMsg();
     showSheetPlacement();
   },
   onDocClosed: () => { if (location.hash === '#sheet') renderSheetView(); },
 });
 
-function hideFloatMsg() { $('#float-msg').hidden = true; }
+function hideFloatMsg() { for (const m of document.querySelectorAll('.float-msg')) m.hidden = true; }
 
-async function onFloatButton() {
-  if (float.isOpen()) { float.close(); return; }
+/** הודעה על חלון צף שלא נפתח, במסך שמוצג כרגע. */
+function showFloatMsg(text) {
   hideFloatMsg();
-  const msg = await float.open();
-  $('#float-msg .msg-text').textContent = msg ?? '';
-  $('#float-msg').hidden = !msg;
+  if (!text) return;
+  const screen = $('#home').hidden ? $('#sheet-view') : $('#home');
+  const m = screen.querySelector('.float-msg');
+  m.querySelector('.msg-text').textContent = text;
+  m.hidden = false;
+}
+
+/** פותח דפית בחלון צף (requirements.md, 5.1.2). לחיצה על הדפית שכבר מוצגת סוגרת את החלון. */
+async function openFloat(mode) {
+  if (float.mode() === mode) { float.close(); return; }
+  hideFloatMsg();
+  // ב-Windows הדפית המלאה עוברת לחלון כמו שהיא, ולכן היא צריכה להיות בנויה גם כשפותחים ממסך הפתיחה.
+  if (mode === 'full' && !float.docOpen() && !sheetEl?.isConnected) buildSheet();
+  showFloatMsg(await float.open(mode));
+}
+
+function onFloatButton() {
+  if (float.isOpen()) { float.close(); return; }
+  openFloat('full');
 }
 
 // ---- מסכים ----
@@ -86,6 +103,7 @@ function renderHome() {
   if (current) {
     $('.drop-label').textContent = briefLabel(current.brief);
     $('.drop-name').textContent = current.fileName;
+    float.prepare();
   }
 }
 
@@ -102,11 +120,15 @@ function openBriefFile() {
   window.open(fileUrl, '_blank');
 }
 
-function renderSheetView() {
-  if (float.docOpen()) { showSheetPlacement(); return; }
+function buildSheet() {
   sheetEl = renderSheet($('#sheet-slot'), current.brief, current.manual, {
     onChange: (manual) => { current.manual = manual; float.update(); scheduleSave(); },
   });
+}
+
+function renderSheetView() {
+  if (float.docOpen()) { showSheetPlacement(); return; }
+  buildSheet();
   showSheetPlacement();
   float.prepare();
 }
@@ -202,7 +224,12 @@ async function start() {
   darkQuery.addEventListener('change', () => { paintThemeButtons(); float.update(); });
   for (const b of document.querySelectorAll('.theme-btn')) b.addEventListener('click', toggleTheme);
   $('#float-btn').addEventListener('click', onFloatButton);
-  $('#float-msg .msg-close').addEventListener('click', hideFloatMsg);
+  for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', hideFloatMsg);
+  for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
+  $('.float-toggle').addEventListener('click', () => {
+    const open = $('#float-group').classList.toggle('open');
+    $('.float-toggle').setAttribute('aria-expanded', String(open));
+  });
   $('.back').addEventListener('click', (e) => {
     e.preventDefault();
     if (history.state?.fromHome) history.back(); else { history.replaceState(null, '', location.pathname); route(); }
