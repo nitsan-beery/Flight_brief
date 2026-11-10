@@ -1,6 +1,6 @@
 # Flight_brief – אפליקציית עזר לתדריך טיסה (PWA)
 
-> המסמך הקובע של הפרויקט. סטטוס: אפיון ראשוני (לפני כתיבת קוד). נכתב מתוך ראיון עם הבעלים ובדיקת תדריך לדוגמה (LY347, TLV→ZRH, 10Nov2026, OFP 11/0/1), שנמצא ב-OneDrive ולא בריפו.
+> המסמך הקובע של הפרויקט. סטטוס: אפיון ראשוני (לפני כתיבת קוד). נכתב מתוך ראיון עם הבעלים ובדיקת תדריכים לדוגמה: תחילה LY347 (TLV→ZRH, 10Nov2026, OFP 11/0/1), ואחר כך השוואה של 8 תדריכים (סעיף 4.2). התדריכים נמצאים ב-OneDrive ולא בריפו.
 > סעיפים המסומנים **[להגדרה]** נשארו פתוחים בכוונה ויוגדרו בהמשך.
 
 ## 1. מטרה
@@ -42,6 +42,8 @@
 
 ## 4. מבנה התדריך (לפי הדוגמה)
 
+> מספרי העמודים בטבלה הם של LY347 בלבד. אורך התדריך ומיקום המקטעים משתנים מטיסה לטיסה (סעיף 4.2), ולכן הניתוח מאתר כל מקטע לפי הכותרת שלו, ולא לפי מספר עמוד. הסדר של המקטעים קבוע.
+
 | עמודים | תוכן | שימוש צפוי |
 |---|---|---|
 | 1–2 | Flight Release: דלק, משקלים, אלטרנטיבה, ETD/ETA/ETE, מסלול, מינימות ו-WX לאלטרנטיבות | **דפית טיסה (שלב 1)** |
@@ -71,6 +73,34 @@
 - **שורות המשך במז"א:** ‏`BECMG`/`TEMPO`/`PROB` ב-TAF, וגם TREND ב-METAR (`TEMPO`, `BECMG`, `NOSIG`), מופיעים בשורות מוזחות. כל דיווח מסתיים ב-`=`. לשדות Enroute מופיעים לרוב שני METAR (האחרון וזה שלפניו).
 - **מידע אישי בתדריך:** שם ומספר טלפון של הדיספצ'ר ושם ה-PIC (עמ' 2, 4), ושמות אנשי צוות ב-NOTAM של החברה. לכן אסור לשמור תדריך בריפו (ראו 6.3).
 
+### 4.2 השוואה בין 8 תדריכים
+
+כל התדריכים מ-10Nov26, בפורמט זהה (שורת כותרת קבועה, `Page N of N`, ואותו סדר מקטעים).
+
+| טיסה | מטוס | מסלול | עמודים | מז"א מתחיל | ALTN | אלטרנטיבות נוספות | Contingency | `FUEL ENROUTE AIRPORT` |
+|---|---|---|---|---|---|---|---|---|
+| LY347 | 737-800 | LLBG→LSZH | 48 | 14 | LSGG | EDDS, LIMC, LFLL | `CONT 3% ERA LIPZ` | LIPZ |
+| LY222 | 737-800 | LFPG→LLBG | 54 | 14 | LCLK | LCPH, LGAV | `CONT 3% ERA LCLK` | LCLK |
+| LY571 | 737-900 | LLBG→LROP | 33 | 13 | LRCK | LUKK | `CONT 3% ERA LRCK` | LRCK |
+| LY843 | 737-800 | LLBG→LGAV | 31 | 13 | LGIR | LGTS, LIBR | `MIN CONT` | LGKO |
+| LY5109 | 737-800 | LLBG→UGTB | 34 | 14 | UGSB | UGKO, LTCG, UBBB | `MIN CONT` | UGKO |
+| LY317 | 787-9 | LLBG→EGLL | 57 | 14 | EGSS | EGBB, EGCC, EHAM | `CONT 3% ERA LFPG` | LFPG |
+| LY018 | 787-9 | KMIA→LLBG | 63 | 22 | LCLK | LCPH, LLER, LGAV, ‏EDTO: KBOS, LPLA | `CONT 3% ERA LTAI` | LTAI |
+| LY091 | 787-8 | LLBG→RJAA | 67 | 29 | RJTT | RJGG, RJBB, RJFF | `MAX CONT` | RJBB |
+
+ממצאים:
+- **Contingency בעמוד 1:** שלוש צורות: `CONT 3% ERA XXXX`, ‏`MIN CONT`, ‏`MAX CONT`. ה-ERA יכול להיות אותו שדה כמו ה-ALTN (LY222, ‏LY571).
+- **`FUEL ENROUTE AIRPORT` מופיע בכל התדריכים, תמיד עם שדה אחד**, גם כשבעמוד 1 יש `MIN CONT` או `MAX CONT`. לכן הוא אינו מגדיר את ה-En-route ALTN (סעיף 5.2).
+- **מז"א מציג כל שדה בכל מקטע שהוא שייך אליו** (ב-LY222, ‏LCLK מופיע תחת האלטרנטיבה וגם תחת `FUEL ENROUTE AIRPORT`).
+- **בבולטין ה-NOTAM כל שדה מופיע פעם אחת בלבד**, במקטע הראשון שהוא שייך אליו. מקטע `FUEL ENROUTE AIRPORT` ב-NOTAM מופיע רק כשהשדה לא הופיע קודם (LY347, ‏LY843, ‏LY317, ‏LY018). לכן NOTAM של שדה מסוים מחפשים בכל המקטעים.
+- **EDTO (‏LY018):** בעמוד 1 יש שורות `EDTO RULE 180 MIN` ו-`EDTO ALTN KBOS LPLA`, וב-OFP יש `EDTO SUMMARY` (כניסה, יציאה, ותקופות התאמה של שדות ה-EDTO). לשדות ה-EDTO אין כותרת משלהם: במז"א הם מופיעים אחרי אלטרנטיבות היעד, וב-NOTAM אחרי ה-`FUEL ENROUTE AIRPORT`. את התפקיד שלהם מזהים רק לפי השורה בעמוד 1.
+- **מספר האלטרנטיבות הנוספות (INFO) משתנה**, בין אחת לשלוש, ולצידן שדות EDTO.
+- **מקטעי ה-FIR ב-NOTAM אינם קבועים.** חסרים לפעמים `AREA ENROUTE DESTINATION - DESTINATION ALTERNATE(S)` (LY222, ‏LY091) ו-`EXTENDED AREA AROUND DESTINATION` (LY5109).
+- **שורות המשך במז"א:** גם `RMK` ב-METAR (LTAI ב-LY843), בנוסף ל-TREND.
+- **`EXTRA` בעמוד 1** מכיל לפעמים ערך (LY222, ‏LY018), ובשאר התדריכים `.....`.
+- **שורות המינימות ב-Advisory info** יוצאות שבורות בחילוץ טקסט בחלק מהתדריכים (LY347, ‏LY222, ‏LY018) ותקינות באחרים. זה מחזק את הצורך בניתוח לפי מיקומי מילים.
+- **אחרי סוף הבולטין** יכולים להופיע מקטעים נוספים של Crew Information (למשל `ENROUTE AIRPORTS IN RUSSIAN FIR` ב-LY091, ו-`DESTINATION ALTERNATE NOT REQUIRED…` בטיסות ל-LLBG). הם אינם חלק מבולטין ה-NOTAM.
+
 ## 5. תוצרי שלב 1
 
 ### 5.1 דפית טיסה
@@ -85,7 +115,8 @@
 - **מקור:** עמ' 14–18 (METAR=`SA`, TAF=`FT`), וגם מזג האוויר המסוכם בעמ' 1 לאלטרנטיבות.
 - **מקטעי מז"א בתדריך:** `DEPARTURE AIRPORT`, ‏`DESTINATION AIRPORT`, ‏`DESTINATION ALTERNATE`, ‏`ENROUTE AIRPORT(S)`, ‏`FUEL ENROUTE AIRPORT`, ואחריהם AIRMET, ‏SIGMET, ‏Tropical Cyclone SIGMET ו-Volcanic Ash SIGMET (בדוגמה: `No Wx data available`).
   - תחת `DESTINATION ALTERNATE` מופיע קודם LSGG (האלטרנטיבה המתוכננת), ואחריו EDDS, ‏LIMC ו-LFLL בלי כותרת נפרדת. אלה אלטרנטיבות ה-INFO מעמ' 6.
-- **"En-route ALTN" אינו חד-משמעי בדוגמה:** יש `FUEL ENROUTE AIRPORT` אחד (LIPZ, שהוא ה-ERA של `CONT 3% ERA` בעמ' 1), ויש רשימה של 25 שדות תחת `ENROUTE AIRPORT(S)`. **[להגדרה]** (שאלה 11).
+- **En-route ALTN** (נקבע על ידי הבעלים): השדה שמופיע בעמוד 1 בשורה `CONT … ERA XXXX`, ורק הוא. כשבשורה מופיע `MIN CONT` או `MAX CONT`, אין En-route ALTN, גם אם בתדריך יש מקטע `FUEL ENROUTE AIRPORT`. צורה אחרת של השורה מוצגת כ"לא מזוהה", בלי ניחוש. רשימת `ENROUTE AIRPORT(S)` אינה En-route ALTN.
+  - כשה-ERA הוא אותו שדה כמו ה-ALTN, הוא מוצג פעם אחת עם שני התפקידים (`ALTN · ERA`).
 - **חוקי הסיכום, ספי מינימה וטווחי זמן:** **[להגדרה]**.
 - תמיד: קישור לטקסט המקורי.
 
@@ -156,8 +187,9 @@
 6. ~~אירוח~~ — GitHub Pages (ריפו ציבורי).
 7. ~~שם~~ — `Flight_brief` (ריפו `nitsan-beery/Flight_brief`, אתר `https://nitsan-beery.github.io/Flight_brief/`, ותיקיה ב-OneDrive).
 8. האם לשמור תדריכים קודמים (אם כן: IndexedDB, וגיבוי לקובץ).
-9. האם יש גם תדריכים לדוגמה נוספים (טיסות ארוכות, אלטרנטיבות אחרות, תדריכים ללא En-route ALTN) לבדיקת הניתוח?
+9. ~~תדריכים לדוגמה נוספים~~ — יש 8 (737 ו-787, כולל EDTO, ‏`MIN CONT` ו-`MAX CONT`; סעיף 4.2). עדיין אין תדריך בלי אלטרנטיבת יעד.
 10. ~~שפת הממשק~~ — עברית, RTL (כמו באפליקציה הקיימת).
-11. מה זה "En-route ALTN" בסיכומי מז"א ו-NOTAM: ה-`FUEL ENROUTE AIRPORT` (ה-ERA, ‏LIPZ בדוגמה), רשימת `ENROUTE AIRPORT(S)` (25 שדות בדוגמה), או שניהם?
+11. ~~En-route ALTN~~ — נסגר: רק ה-ERA משורת `CONT … ERA` בעמוד 1. עם `MIN CONT` או `MAX CONT` אין (סעיף 5.2).
 12. האם לכלול בסיכומים גם את אלטרנטיבות ה-INFO (בדוגמה: EDDS, ‏LIMC, ‏LFLL), או רק את האלטרנטיבה המתוכננת (LSGG)?
 13. האם NOTAM של FIR (לאורך המסלול ובאזורי המוצא והיעד) ו-NOTAM של החברה (`CO…`) נכללים בסיכום NOTAM?
+14. האם לכלול בסיכומי מז"א ו-NOTAM את שדות ה-EDTO (‏`EDTO ALTN` בעמוד 1)?
