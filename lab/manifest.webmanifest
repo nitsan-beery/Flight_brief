@@ -1,0 +1,11 @@
+{
+  "name": "Flight brief – בדיקת חלון צף",
+  "short_name": "FB חלון צף",
+  "start_url": "./pip-test.html",
+  "scope": "./",
+  "display": "standalone",
+  "lang": "he",
+  "dir": "rtl",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}
