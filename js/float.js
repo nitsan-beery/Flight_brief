@@ -1,7 +1,8 @@
 // הדפית בחלון צף מעל אפליקציות אחרות. requirements.md, סעיף 5.1.2.
 //
 // אייפד (Safari/Chrome): החלון הצף של המערכת מקבל רק וידאו. הדפית מצוירת על canvas, מוזרמת לווידאו
-// (captureStream) ונפתחת ב-Picture-in-Picture, לקריאה בלבד. פריים חדש מצויר רק כשערך משתנה.
+// (captureStream) ונפתחת ב-Picture-in-Picture, לקריאה בלבד. הזרם בקצב קבוע, והדפית מצוירת מחדש פעם
+// בשנייה: בלי פריימים רציפים Safari עוצר את הווידאו, והחלון נתקע (נבדק באייפד, גרסה 8).
 // מאפליקציה שהותקנה למסך הבית הפתיחה נכשלת (באג WebKit 303885): מנסים, וכשנכשל מציגים הסבר.
 // Windows (Chrome/Edge): הדפית המלאה ב-Document Picture-in-Picture, חלון HTML שאפשר לערוך בו.
 //
@@ -35,12 +36,15 @@ export function createFloat(o) {
     draw();
     if (stream || !canvas.captureStream) return;
     try {
-      stream = canvas.captureStream();
+      stream = canvas.captureStream(10);
       video.srcObject = stream;
-      draw();
       video.play().catch(() => {});
+      setInterval(draw, 1000);
     } catch { stream = null; }
   }
+
+  // וידאו שנעצר (Safari, או השהיה בחלון הצף) חוזר לנגן: החלון מציג דפית, לא סרט.
+  video.addEventListener('pause', () => { if (stream) video.play().catch(() => {}); });
 
   const docSupported = () => 'documentPictureInPicture' in window;
   const videoOpen = () => document.pictureInPictureElement === video || video.webkitPresentationMode === 'picture-in-picture';

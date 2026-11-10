@@ -97,4 +97,5 @@ button svg,.back svg{width:18px;height:18px}
 
 /* הווידאו של החלון הצף: חייב להיות במסמך ולנגן, אבל לא נראה. */
 #pip-canvas{position:fixed;left:-10000px;top:0}
-#pip-video{position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none}
+/* גודל אמיתי, שקוף ומאחורי התוכן: Safari עוצר וידאו זעיר או מוסתר (requirements.md, 5.1.2). */
+#pip-video{position:fixed;left:0;bottom:0;width:96px;height:72px;opacity:.01;pointer-events:none;z-index:-1}

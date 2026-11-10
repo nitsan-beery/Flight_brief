@@ -8,7 +8,7 @@ import { createFloat } from './float.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 8;
+const APP_VERSION = 9;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
