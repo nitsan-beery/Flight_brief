@@ -39,6 +39,11 @@ button svg,.back svg{width:18px;height:18px}
 .drop.loaded .drop-loaded{display:flex}
 .drop.loaded .drop-title,.drop.loaded .drop-sub,.drop.loaded .drop-state{display:none}
 .drop.loaded .drop-loaded{margin-top:0}
+.drop-file{gap:10px;padding:8px 12px;border-radius:10px;max-width:100%}
+.drop-file:hover{border-color:var(--ok)}
+.drop-file>svg{width:22px;height:22px;flex:none;color:var(--tx2)}
+.drop-file>svg.ext{width:16px;height:16px;color:var(--tx3)}
+.drop-file-text{display:flex;flex-direction:column;align-items:center;min-width:0}
 .drop-label{font-weight:600;font-variant-numeric:tabular-nums}
 .drop-name{font-size:13px;color:var(--tx2);word-break:break-word}
 .drop-pick{margin-top:16px;font-size:14px}
@@ -49,8 +54,7 @@ button svg,.back svg{width:18px;height:18px}
 .list-title{font-size:14px;font-weight:400;color:var(--tx2);margin:20px 2px 8px}
 .output{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--sheet);border:1px solid var(--ln);border-radius:12px;padding:12px 14px;color:var(--tx);text-decoration:none}
 .output:hover{border-color:var(--ac)}
-.output-title{display:block;font-weight:600}
-.output-sub{display:block;font-size:13px;color:var(--tx2)}
+.output-title{font-weight:600}
 .output svg{width:20px;height:20px;color:var(--tx2);flex:none}
 .foot{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:40px;font-size:13px;color:var(--tx3)}
 .foot button{font-size:13px;padding:4px 10px;border-color:var(--ac);color:var(--ac)}

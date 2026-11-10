@@ -35,8 +35,11 @@
         <span class="drop-sub">קובץ PDF של תדריך הטיסה</span>
         <span class="drop-state">לא נבחר קובץ</span>
         <span class="drop-loaded">
-          <span class="drop-label" dir="ltr"></span>
-          <span class="drop-name" dir="ltr"></span>
+          <button type="button" class="drop-file" title="פתיחת קובץ התדריך">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/></svg>
+            <span class="drop-file-text"><span class="drop-label" dir="ltr"></span><span class="drop-name" dir="ltr"></span></span>
+            <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+          </button>
           <button type="button" class="drop-pick">בחר תדריך אחר</button>
         </span>
         <span class="drop-error" role="alert"></span>
@@ -45,7 +48,7 @@
       <div id="outputs" hidden>
         <h2 class="list-title">מה להציג</h2>
         <a class="output" href="#sheet">
-          <span><span class="output-title">דפית טיסה</span><span class="output-sub">זמנים, דלק, צוות, <bdi>Loadsheet</bdi>, <bdi>OPT</bdi></span></span>
+          <span class="output-title">דפית טיסה</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
         </a>
       </div>

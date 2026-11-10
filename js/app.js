@@ -9,7 +9,7 @@ import { createSource } from './source.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 4;
+const APP_VERSION = 5;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -102,6 +102,19 @@ function renderHome() {
   }
 }
 
+// קובץ ה-PDF השמור, לפתיחה בלחיצה על שם הקובץ (requirements.md, 3.1). כתובת blob: מהמכשיר עצמו.
+let fileUrl = null;
+let fileUrlBytes = null;
+function openBriefFile() {
+  if (!current?.bytes) return;
+  if (fileUrlBytes !== current.bytes) {
+    if (fileUrl) URL.revokeObjectURL(fileUrl);
+    fileUrl = URL.createObjectURL(new Blob([current.bytes], { type: 'application/pdf' }));
+    fileUrlBytes = current.bytes;
+  }
+  window.open(fileUrl, '_blank');
+}
+
 function renderSheetView() {
   if (float.docOpen()) { showSheetPlacement(); return; }
   sheetEl = renderSheet($('#sheet-slot'), current.brief, current.manual, {
@@ -165,6 +178,7 @@ function wireDrop() {
   // כשהתדריך טעון, רק הכפתור פותח את בחירת הקובץ.
   drop.addEventListener('click', (e) => {
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
+    if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
   });
   drop.addEventListener('dragover', (e) => { e.preventDefault(); });
