@@ -23,6 +23,9 @@ button svg,.back svg{width:18px;height:18px}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;margin-bottom:12px}
 .bar-actions{display:flex;gap:8px}
 .note{font-size:14px;color:var(--tx2);background:var(--sheet);border:1px solid var(--ln);border-radius:10px;padding:10px 12px;margin:0 0 12px}
+.msg{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.msg-close{flex:none;padding:4px}
+.msg-close svg{width:16px;height:16px}
 
 /* כרטיס התדריך (requirements.md, 3.1) */
 .drop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;background:var(--sheet);border:1.5px dashed var(--bx);border-radius:14px;padding:18px 16px;cursor:pointer}

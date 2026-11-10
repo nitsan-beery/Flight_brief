@@ -9,7 +9,7 @@ import { createSource } from './source.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 1;
+const APP_VERSION = 2;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -74,8 +74,9 @@ function hideFloatMsg() { $('#float-msg').hidden = true; }
 
 async function onFloatButton() {
   if (float.isOpen()) { float.close(); return; }
+  hideFloatMsg();
   const msg = await float.open();
-  $('#float-msg').textContent = msg ?? '';
+  $('#float-msg .msg-text').textContent = msg ?? '';
   $('#float-msg').hidden = !msg;
 }
 
@@ -84,6 +85,7 @@ async function onFloatButton() {
 function route() {
   const wantSheet = location.hash === '#sheet' && current;
   if (location.hash === '#sheet' && !current) history.replaceState(null, '', location.pathname);
+  if (!wantSheet) hideFloatMsg();
   $('#home').hidden = !!wantSheet;
   $('#sheet-view').hidden = !wantSheet;
   if (wantSheet) renderSheetView(); else renderHome();
@@ -200,6 +202,7 @@ async function start() {
   darkQuery.addEventListener('change', () => { paintThemeButtons(); float.update(); });
   for (const b of document.querySelectorAll('.theme-btn')) b.addEventListener('click', toggleTheme);
   $('#float-btn').addEventListener('click', onFloatButton);
+  $('#float-msg .msg-close').addEventListener('click', hideFloatMsg);
   $('.back').addEventListener('click', (e) => {
     e.preventDefault();
     if (history.state?.fromHome) history.back(); else { history.replaceState(null, '', location.pathname); route(); }
