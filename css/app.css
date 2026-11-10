@@ -37,10 +37,11 @@ button svg,.back svg{width:18px;height:18px}
 .drop-state{margin-top:6px;font-size:14px;color:var(--tx2)}
 .drop-loaded{display:none;flex-direction:column;align-items:center;gap:2px;margin-top:6px}
 .drop.loaded .drop-loaded{display:flex}
-.drop.loaded .drop-sub,.drop.loaded .drop-state{display:none}
+.drop.loaded .drop-title,.drop.loaded .drop-sub,.drop.loaded .drop-state{display:none}
+.drop.loaded .drop-loaded{margin-top:0}
 .drop-label{font-weight:600;font-variant-numeric:tabular-nums}
 .drop-name{font-size:13px;color:var(--tx2);word-break:break-word}
-.drop-pick{margin-top:8px;font-size:14px}
+.drop-pick{margin-top:16px;font-size:14px}
 .drop-error{font-size:14px;color:var(--bad);margin-top:6px}
 .drop-error:empty{display:none}
 
