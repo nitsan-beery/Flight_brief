@@ -226,17 +226,12 @@ function drawFull(canvas, brief, manual) {
   section('Loadsheet');
   row([{ l: 'CG (MACTOW)', v: m('cg') }, { l: 'SOB', v: m('sob') }]);
   section('OPT');
-  // N1 במשבצת משלו, והמהירויות במשבצת אחת, ברווח כפול (requirements.md, 5.1.1).
+  // N1 במשבצת משלו ברווח כפול, וכל מהירות במשבצת משלה ברווח 8 (requirements.md, 5.1.1, גרסה 15).
   {
-    const h = 72, gap = 2 * G, n1w = (IW - gap) / 4;
+    const h = 72, gap = 2 * G, n1w = (IW - gap) / 4, sg = 8;
     cell(p, M, y, n1w, h, 'N1', m('n1'));
-    const sx = M + n1w + gap, sw = IW - n1w - gap, inner = (sw - 24 - 2 * G) / 3;
-    p.rr(sx, y, sw, h, 10, c.card);
-    [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => {
-      const x = sx + 12 + i * (inner + G);
-      txt(l, x, y + 23, 16, c.tx2);
-      txt(m(k) || '—', x + 8, y + 55, 21, c.tx);
-    });
+    const sx = M + n1w + gap, sw = (IW - n1w - gap - 2 * sg) / 3;
+    [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, sx + i * (sw + sg), y, sw, h, l, m(k)));
   }
   txt('כלי עזר בלבד', W - M, H - 20, 13, c.tx2, { rtl: true, align: 'right' });
 }
