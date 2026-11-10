@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="../lab/pip-common.css">
+<title>חלון צף</title>
+</head>
+<body>
+<main>
+<h1>חלון צף לדפית</h1>
+<p>עמוד ניסוי. נפתח מחוץ לאפליקציה המותקנת, עם הנתונים שהועברו בקישור.</p>
+<p id="src"></p>
+
+<div class="row">
+  <button class="pri" id="pipStd">פתח בחלון צף</button>
+  <button id="pipWk">חלון צף (שיטה חלופית)</button>
+</div>
+<div class="row" id="layouts"></div>
+<div id="preview">
+  <canvas id="cv" width="960" height="540" aria-label="תצוגה מקדימה של הדפית כפי שתופיע בחלון הצף"></canvas>
+  <video id="vid" muted playsinline autoplay aria-label="הווידאו שנפתח בחלון הצף"></video>
+</div>
+
+<h2>מה המכשיר תומך</h2>
+<ul id="diag"></ul>
+<h2>יומן</h2>
+<div id="log"></div>
+<div class="row"><button id="copy">העתק תוצאות</button></div>
+</main>
+
+<script src="../lab/pip-common.js"></script>
+<script>
+const {$} = FB;
+const cv = $('#cv'), vid = $('#vid'), logEl = $('#log');
+const log = FB.makeLog(logEl);
+window.addEventListener('error', e => log('JS error: ' + e.message));
+window.addEventListener('unhandledrejection', e => log('Promise rejected: ' + (e.reason && (e.reason.name + ': ' + e.reason.message))));
+
+// אין ניחוש שקט: אם לא הגיעו נתונים בקישור, העמוד אומר זאת ומציג את ערכי הדוגמה.
+const got = FB.fromHash();
+const d = got || FB.DEFAULTS;
+$('#src').textContent = got ? 'הנתונים הגיעו מהקישור.' : 'לא הגיעו נתונים בקישור. מוצגים ערכי הדוגמה.';
+if (got && got.theme) FB.setTheme(got.theme);
+const initial = (got && FB.LAYOUTS[got.layout]) ? got.layout : 'c169';
+
+let getLayout = () => initial;
+function draw(){ FB.drawSheet(cv, getLayout(), d); }
+const p = FB.pip({cv, vid, log, redraw: draw});
+getLayout = FB.layoutButtons($('#layouts'), initial, k => { log('פריסה: ' + FB.LAYOUTS[k].label); p.restart(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
+draw(); p.start();
+setInterval(draw, 500);
+
+$('#pipStd').onclick = p.openStd;
+$('#pipWk').onclick = p.openWk;
+
+const showDiag = () => FB.diag($('#diag'), cv, vid, [
+  ['נתונים מהקישור', got ? '<span class="ok">כן</span>' : '<span class="bad">לא</span>'],
+  ['history.length', String(history.length)],
+]);
+showDiag(); addEventListener('resize', showDiag);
+log('UA: ' + navigator.userAgent);
+log('referrer: ' + (document.referrer || '(ריק)'));
+$('#copy').onclick = () => FB.copyResults($('#diag'), logEl, log);
+</script>
+</body>
+</html>

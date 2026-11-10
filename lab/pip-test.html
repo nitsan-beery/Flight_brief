@@ -8,20 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="FB חלון צף">
 <meta name="color-scheme" content="light dark">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="pip-common.css">
 <title>בדיקת חלון צף</title>
 <style>
-:root{--bg:#f1efe8;--sheet:#ffffff;--card:#f6f5f1;--fld:#ffffff;--tx:#1f1e1c;--tx2:#5f5e5a;--tx3:#888780;--ln:rgba(0,0,0,.12);--bx:rgba(0,0,0,.28);--ac:#185FA5;--ok:#3B6D11;--bad:#A32D2D}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121211;--sheet:#1b1b1a;--card:#262624;--fld:#1b1b1a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595}}
-:root[data-theme="dark"]{--bg:#121211;--sheet:#1b1b1a;--card:#262624;--fld:#1b1b1a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 -apple-system,system-ui,"Segoe UI",Arial,sans-serif;padding:16px max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))}
-main{max-width:620px;margin:0 auto}
-h1{font-size:20px;font-weight:600;margin:0 0 4px}
-h2{font-size:16px;font-weight:600;margin:24px 0 8px}
-p,li{color:var(--tx2);font-size:14px}
-button{font:inherit;font-size:15px;color:var(--tx);background:var(--sheet);border:1px solid var(--bx);border-radius:8px;padding:8px 14px;cursor:pointer}
-button.pri{border-color:var(--ac);color:var(--ac)}
-.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
 .fs{direction:ltr;background:var(--sheet);border:1px solid var(--ln);border-radius:16px;padding:18px 20px}
 .fs .sec{font-size:13px;color:var(--tx2);margin:16px 0 8px;direction:rtl}
 .fs .grid{display:grid;gap:10px}
@@ -33,14 +22,6 @@ button.pri{border-color:var(--ac);color:var(--ac)}
 .fs input.chg{color:var(--ac)}
 .fs input.nm{font-size:16px;direction:rtl;text-align:right}
 .fs .add{font-size:13px;color:var(--ac);background:none;border:none;padding:0;direction:rtl}
-.heb{direction:rtl}
-#preview{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
-#cv{width:240px;border:1px solid var(--ln);border-radius:8px;background:var(--sheet)}
-#vid{width:120px;border:1px solid var(--ln);border-radius:8px;background:#000}
-#diag{list-style:none;padding:0;margin:0;font-size:14px}
-#diag li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--ln);padding:4px 0;color:var(--tx)}
-.ok{color:var(--ok)}.bad{color:var(--bad)}
-#log{direction:ltr;text-align:left;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--sheet);border:1px solid var(--ln);border-radius:8px;padding:8px;min-height:60px;white-space:pre-wrap;color:var(--tx2)}
 </style>
 </head>
 <body>
@@ -89,24 +70,28 @@ button.pri{border-color:var(--ac);color:var(--ac)}
   </div>
 </div>
 
-<h2>בדיקה ב: חלון צף (Picture-in-Picture)</h2>
-<p>הכפתורים מוציאים את הדפית לחלון וידאו צף. אחרי שהחלון נפתח, עבור לאפליקציה אחרת ובדוק שהוא נשאר מעליה, שאפשר להגדיל ולהקטין אותו (צביטה), להחביא אותו בצד המסך ולסגור אותו.</p>
+<h2>בדיקה 1: גודל החלון הצף (ב-Safari)</h2>
+<p>בחר פריסה, פתח את החלון הצף והגדל אותו בצביטה עד הסוף. בדוק כל פריסה ורשום איזו קריאה ביותר. שינוי פריסה סוגר את החלון, ואז פותחים אותו שוב.</p>
+<div class="row" id="layouts"></div>
 <div class="row">
   <button class="pri" id="pipStd">פתח בחלון צף</button>
   <button id="pipWk">חלון צף (שיטה חלופית)</button>
   <button id="pipDoc">חלון צף ניתן לעריכה (Windows)</button>
 </div>
 <div id="preview">
-  <canvas id="cv" width="600" height="760" aria-label="תצוגה מקדימה של הדפית כפי שתופיע בחלון הצף"></canvas>
+  <canvas id="cv" width="960" height="540" aria-label="תצוגה מקדימה של הדפית כפי שתופיע בחלון הצף"></canvas>
   <video id="vid" muted playsinline autoplay aria-label="הווידאו שנפתח בחלון הצף"></video>
 </div>
 
-<h2>בדיקה א: ריבוי משימות של iPadOS</h2>
-<ol>
-  <li>פתח את העמוד ב-Safari, ונסה לפתוח את Safari בחלון קטן, ב-Slide Over או ב-Split View לצד ה-EFB.</li>
-  <li>הוסף את העמוד למסך הבית (שיתוף ← הוסף למסך הבית), ופתח אותו מהאייקון. השורה "מותקן במסך הבית" למטה צריכה להראות "כן".</li>
-  <li>מהאייקון: נסה שוב את החלונות, Slide Over ו-Split View, ונסה שוב את כפתור החלון הצף.</li>
-</ol>
+<h2>בדיקה 2: פתיחה בדפדפן מתוך האפליקציה המותקנת</h2>
+<p>פתח את העמוד מהאייקון במסך הבית. נסה כל אחת מהדרכים. בכל פעם בדוק לאן העמוד נפתח: ב-Safari עצמו, או בדפדפן קטן בתוך האפליקציה (עם כפתור "סיום" או X למעלה). שם לחץ על "פתח בחלון צף", ואחר כך "העתק תוצאות".</p>
+<div class="row">
+  <a class="btn" id="lnkSame">קישור רגיל</a>
+  <a class="btn" id="lnkBlank" target="_blank" rel="noopener">קישור לחלון חדש</a>
+  <button id="winOpen">window.open</button>
+  <button id="copyLink">העתק קישור</button>
+</div>
+<p>עם "העתק קישור": פתח את Safari בעצמך, הדבק בשורת הכתובת ועבור לכתובת.</p>
 
 <h2>מה המכשיר תומך</h2>
 <ul id="diag"></ul>
@@ -115,19 +100,19 @@ button.pri{border-color:var(--ac);color:var(--ac)}
 <div class="row"><button id="copy">העתק תוצאות</button></div>
 </main>
 
+<script src="pip-common.js"></script>
 <script>
-const $ = s => document.querySelector(s);
-const cv = $('#cv'), ctx = cv.getContext('2d'), vid = $('#vid');
-const logEl = $('#log');
-function log(m){ const t = new Date().toISOString().slice(11,19); logEl.textContent += `${t} ${m}\n`; }
+const {$, BRIEF} = FB;
+const cv = $('#cv'), vid = $('#vid'), logEl = $('#log');
+const log = FB.makeLog(logEl);
 window.addEventListener('error', e => log('JS error: ' + e.message));
 window.addEventListener('unhandledrejection', e => log('Promise rejected: ' + (e.reason && (e.reason.name + ': ' + e.reason.message))));
 
 const root = document.documentElement;
-function setTheme(t){ if (t) root.dataset.theme = t; else delete root.dataset.theme; draw(); }
-$('#thLight').onclick = () => setTheme('light');
-$('#thDark').onclick = () => setTheme('dark');
-$('#thAuto').onclick = () => setTheme(null);
+const theme = t => { FB.setTheme(t); draw(); updateLinks(); };
+$('#thLight').onclick = () => theme('light');
+$('#thDark').onclick = () => theme('dark');
+$('#thAuto').onclick = () => theme(null);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
 
 document.querySelectorAll('.add').forEach(b => b.onclick = () => {
@@ -135,88 +120,23 @@ document.querySelectorAll('.add').forEach(b => b.onclick = () => {
   document.getElementById(b.dataset.t).appendChild(i); i.focus();
 });
 const bf = $('#bf');
-document.addEventListener('input', () => { bf.classList.toggle('chg', bf.value.trim() !== '14.2'); draw(); });
-
-function css(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
-const FONT = '-apple-system, system-ui, "Segoe UI", Arial, sans-serif';
-function rr(x,y,w,h,r,fill,stroke){
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h);
-  if (fill){ ctx.fillStyle = fill; ctx.fill(); }
-  if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
-}
-function txt(s,x,y,size,color,opt={}){
-  ctx.font = `${opt.w||400} ${size}px ${FONT}`; ctx.fillStyle = color;
-  ctx.direction = opt.rtl ? 'rtl' : 'ltr'; ctx.textAlign = opt.align || 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText(s,x,y);
-}
-function names(id){ return [...document.querySelectorAll('#'+id+' input')].map(i => i.value.trim()).filter(Boolean); }
-
-function draw(){
-  const W = cv.width, H = cv.height, M = 24, G = 12, IW = W - 2*M;
-  const c = {sheet:css('--sheet'),card:css('--card'),fld:css('--fld'),tx:css('--tx'),tx2:css('--tx2'),bx:css('--bx'),ac:css('--ac')};
-  ctx.clearRect(0,0,W,H); rr(0,0,W,H,0,c.sheet);
-  txt('LY347/10', M, 52, 30, c.tx, {w:600});
-  txt('LLBG → LSZH · 4XEKI · 737-800', M, 80, 17, c.tx2);
-  txt('10/11/26', W-M, 44, 15, c.tx2, {align:'right'});
-  txt('OFP 11/0/1', W-M, 66, 15, c.tx2, {align:'right'});
-  let y = 112;
-  function section(title){ txt(title, W-M, y, 15, c.tx2, {rtl:true, align:'right'}); y += 10; }
-  function cells(spec, h=72){
-    const total = spec.reduce((a,s)=>a+(s.f||1),0); let x = M; const unit = (IW - G*(spec.length-1)) / total;
-    spec.forEach(s => {
-      const w = unit*(s.f||1); rr(x,y,w,h,10,c.card);
-      if (s.heb) txt(s.l, x+w-12, y+22, 14, c.tx2, {rtl:true, align:'right'}); else txt(s.l, x+12, y+22, 14, c.tx2);
-      if (s.lines){
-        s.lines.forEach((n,k) => txt(n, x+w-12, y+48+k*24, 19, c.tx, {rtl:true, align:'right'}));
-      } else {
-        if (s.inp) rr(x+10, y+30, w-20, 34, 7, c.fld, c.bx);
-        txt(s.v, x+20, y+55, 21, s.col||c.tx);
-      }
-      x += w + G;
-    });
-    y += h + 22;
-  }
-  section('זמנים'); cells([{l:'STD – STA',v:'06:30 – 11:00',f:2},{l:'ETE',v:'04:15'}]);
-  const bfv = bf.value.trim() || '—';
-  section('דלק ומשקל'); cells([{l:'T.F',v:'10,805'},{l:'T.O.W',v:'72.2'},{l:'B.F (14.2)',v:bfv,inp:1,col: bfv!=='14.2'?c.ac:c.tx}]);
-  const cab = names('cab'), ck = names('ck'), rows = Math.max(1, cab.length, ck.length);
-  section('צוות'); cells([{l:'קבינה',heb:1,lines:cab},{l:'קוקפיט',heb:1,lines:ck}], 34 + rows*24);
-  const v = id => $('#'+id).value.trim() || '—';
-  section('Loadsheet'); cells([{l:'CG (MACTOW)',v:v('cg'),inp:1},{l:'SOB',v:v('sob'),inp:1}]);
-  section('OPT'); cells([{l:'N1',v:v('n1'),inp:1},{l:'V1',v:v('v1'),inp:1},{l:'VR',v:v('vr'),inp:1},{l:'V2',v:v('v2'),inp:1}]);
-  const now = new Date().toTimeString().slice(0,8);
-  txt('כלי עזר בלבד', W-M, H-20, 13, c.tx2, {rtl:true, align:'right'});
-  txt('frame ' + now, M, H-20, 13, c.tx2);
+const names = id => [...document.querySelectorAll('#'+id+' input')].map(i => i.value.trim()).filter(Boolean);
+const v = id => $('#'+id).value.trim();
+function data(){
+  return {bf:v('bf'), cab:names('cab'), ck:names('ck'), cg:v('cg'), sob:v('sob'), n1:v('n1'), v1:v('v1'), vr:v('vr'), v2:v('v2')};
 }
 
-let stream = null;
-function startStream(){
-  if (stream) return;
-  if (!cv.captureStream){ log('captureStream לא נתמך'); return; }
-  try {
-    stream = cv.captureStream(10);
-    vid.srcObject = stream;
-    const p = vid.play(); if (p) p.then(() => log('video playing')).catch(e => log('video.play failed: ' + e.name + ': ' + e.message));
-  } catch(e){ log('captureStream error: ' + e.name + ': ' + e.message); }
-}
-draw(); startStream();
+let getLayout = () => 'c169';
+function draw(){ FB.drawSheet(cv, getLayout(), data()); }
+const p = FB.pip({cv, vid, log, redraw: draw});
+getLayout = FB.layoutButtons($('#layouts'), 'c169', k => { log('פריסה: ' + FB.LAYOUTS[k].label); p.restart(); updateLinks(); });
+
+document.addEventListener('input', () => { bf.classList.toggle('chg', bf.value.trim() !== BRIEF.bfPlan); draw(); updateLinks(); });
+draw(); p.start();
 setInterval(draw, 500);
 
-vid.addEventListener('enterpictureinpicture', () => log('נכנס לחלון צף (standard)'));
-vid.addEventListener('leavepictureinpicture', () => log('יצא מחלון צף (standard)'));
-vid.addEventListener('webkitpresentationmodechanged', () => log('presentation mode: ' + vid.webkitPresentationMode));
-
-$('#pipStd').onclick = () => {
-  startStream();
-  if (!document.pictureInPictureEnabled || !vid.requestPictureInPicture){ log('requestPictureInPicture לא זמין, נסה את השיטה החלופית'); return; }
-  vid.requestPictureInPicture().then(() => log('requestPictureInPicture הצליח')).catch(e => log('requestPictureInPicture נכשל: ' + e.name + ': ' + e.message));
-};
-$('#pipWk').onclick = () => {
-  startStream();
-  if (!vid.webkitSupportsPresentationMode || !vid.webkitSupportsPresentationMode('picture-in-picture')){ log('webkit PiP לא נתמך'); return; }
-  try { vid.webkitSetPresentationMode('picture-in-picture'); log('webkitSetPresentationMode נשלח'); } catch(e){ log('webkit PiP נכשל: ' + e.name + ': ' + e.message); }
-};
+$('#pipStd').onclick = p.openStd;
+$('#pipWk').onclick = p.openWk;
 
 $('#pipDoc').onclick = async () => {
   if (!('documentPictureInPicture' in window)){ log('Document PiP לא נתמך בדפדפן הזה'); return; }
@@ -233,28 +153,29 @@ $('#pipDoc').onclick = async () => {
   } catch(e){ log('Document PiP נכשל: ' + e.name + ': ' + e.message); }
 };
 
-function diag(){
-  const yes = b => b ? '<span class="ok">כן</span>' : '<span class="bad">לא</span>';
-  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  const items = [
-    ['מותקן במסך הבית (standalone)', yes(standalone)],
-    ['canvas.captureStream', yes(!!cv.captureStream)],
-    ['Picture-in-Picture רגיל', yes(!!document.pictureInPictureEnabled)],
-    ['Picture-in-Picture של WebKit', yes(!!(vid.webkitSupportsPresentationMode && vid.webkitSupportsPresentationMode('picture-in-picture')))],
-    ['Document PiP (Windows)', yes('documentPictureInPicture' in window)],
-    ['רוחב חלון', innerWidth + '×' + innerHeight],
-  ];
-  $('#diag').innerHTML = items.map(([k,v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('');
+// עמוד החלון הצף נמצא מחוץ לתחום של האפליקציה המותקנת (lab/), כדי שייפתח בדפדפן.
+function floatUrl(){
+  const d = Object.assign(data(), {layout: getLayout(), theme: root.dataset.theme || null});
+  return new URL('../lab-float/float.html', location.href).href + FB.toHash(d);
 }
-diag(); addEventListener('resize', diag);
-log('UA: ' + navigator.userAgent);
-
-$('#copy').onclick = () => {
-  const text = [...document.querySelectorAll('#diag li')].map(li => li.innerText.replace('\n',': ')).join('\n') + '\n\n' + logEl.textContent;
-  (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard')))
-    .then(() => log('התוצאות הועתקו'))
-    .catch(() => log('ההעתקה נכשלה, אפשר לצלם מסך'));
+function updateLinks(){ const u = floatUrl(); $('#lnkSame').href = u; $('#lnkBlank').href = u; }
+updateLinks();
+$('#lnkSame').addEventListener('click', () => log('נלחץ: קישור רגיל'));
+$('#lnkBlank').addEventListener('click', () => log('נלחץ: קישור לחלון חדש'));
+$('#winOpen').onclick = () => {
+  const w = window.open(floatUrl(), '_blank');
+  log('window.open ' + (w ? 'החזיר חלון' : 'החזיר null'));
 };
+$('#copyLink').onclick = () => {
+  (navigator.clipboard ? navigator.clipboard.writeText(floatUrl()) : Promise.reject(new Error('no clipboard')))
+    .then(() => log('הקישור הועתק'))
+    .catch(() => log('העתקת הקישור נכשלה'));
+};
+
+const showDiag = () => FB.diag($('#diag'), cv, vid);
+showDiag(); addEventListener('resize', showDiag);
+log('UA: ' + navigator.userAgent);
+$('#copy').onclick = () => FB.copyResults($('#diag'), logEl, log);
 </script>
 </body>
 </html>
