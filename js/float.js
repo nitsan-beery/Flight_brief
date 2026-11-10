@@ -259,7 +259,7 @@ function drawCruise(canvas, brief, manual) {
   const cab = crewNames(manual.cab), ck = crewNames(manual.ck);
   const crewRows = Math.max(1, cab.length, ck.length);
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
-  const crew = { ls: 20, ns: 24, lh: 30, top: 42 };
+  const crew = { ls: 20, ns: 30, lh: 36, top: 40 }; // זמנים ושמות באותו גודל (גרסה 13)
   const timesH = 100, crewH = crew.top + crewRows * crew.lh;
   const H = 64 + timesH + G + crewH + M;
   const p = setup(canvas, H);
@@ -269,7 +269,7 @@ function drawCruise(canvas, brief, manual) {
   txt(`${brief.org} → ${brief.dst}`, W - M, 42, 20, c.tx2, { align: 'right' });
   let y = 64;
   const unit = (IW - G) / 3;
-  const big = { ls: 20, vs: 34 };
+  const big = { ls: 20, vs: 30 };
   cell(p, M, y, unit * 2, timesH, 'STD – STA', `${v('std')} – ${v('sta')}`, { ...big, missing: f.std.missing || f.sta.missing });
   cell(p, M + unit * 2 + G, y, unit, timesH, 'ETE', v('ete'), { ...big, missing: f.ete.missing });
   y += timesH + G;
