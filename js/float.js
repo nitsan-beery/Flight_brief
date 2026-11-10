@@ -173,11 +173,12 @@ function cell(p, x, y, w, h, label, value, o = {}) {
   p.txt(value || '—', x + 20, y + h - (h - (o.ls ?? 16) - 7 - vs) / 2 - vs * 0.15, o.missing ? vs - 3 : vs, o.missing ? p.c.bad : (o.col || p.c.tx));
 }
 
-/** משבצת צוות: כותרת בעברית ושם בכל שורה, מיושר לימין. */
-function crewCell(p, x, y, w, h, label, names) {
+/** משבצת צוות: כותרת בעברית ושם בכל שורה, מיושר לימין. גובה: top + שורות * lh. */
+const CREW = { ls: 16, ns: 19, lh: 24, top: 34 };
+function crewCell(p, x, y, w, h, label, names, o = CREW) {
   p.rr(x, y, w, h, 10, p.c.card);
-  p.txt(label, x + w - 12, y + 23, 16, p.c.tx2, { rtl: true, align: 'right' });
-  names.forEach((n, k) => p.txt(n, x + w - 12, y + 48 + k * 24, 19, p.c.tx, { rtl: true, align: 'right' }));
+  p.txt(label, x + w - 12, y + o.ls + 7, o.ls, p.c.tx2, { rtl: true, align: 'right' });
+  names.forEach((n, k) => p.txt(n, x + w - 12, y + o.ls + 7 + o.lh * (k + 1), o.ns, p.c.tx, { rtl: true, align: 'right' }));
 }
 
 /** הדפית המלאה, לפי העיצוב שבמסך (5.1.1). */
@@ -242,11 +243,12 @@ function drawFull(canvas, brief, manual) {
 
 /** המראה: רק OPT, בלי כותרת. N1 ממורכז למעלה, והמהירויות בשלוש משבצות נפרדות מתחתיו. */
 function drawTakeoff(canvas, brief, manual) {
-  const h = 116, gap = 16, cw = (IW - 2 * gap) / 3;
+  // גדלים: requirements.md, 5.1.2 (גרסה 10).
+  const h = 96, gap = 16, cw = (IW - 2 * gap) / 3;
   const H = M + h + gap + h + M;
   const p = setup(canvas, H);
   const m = (k) => manualVal(manual, k);
-  const big = { ls: 20, vs: 46 };
+  const big = { ls: 17, vs: 36 };
   cell(p, M + cw + gap, M, cw, h, 'N1', m('n1'), big);
   [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, M + i * (cw + gap), M + h + gap, cw, h, l, m(k), big));
 }
@@ -256,22 +258,24 @@ function drawCruise(canvas, brief, manual) {
   const f = brief.fields;
   const cab = crewNames(manual.cab), ck = crewNames(manual.ck);
   const crewRows = Math.max(1, cab.length, ck.length);
-  const timesH = 80, crewH = 34 + crewRows * 24;
-  const H = 56 + timesH + G + crewH + M;
+  // גדלים: requirements.md, 5.1.2 (גרסה 10).
+  const crew = { ls: 20, ns: 24, lh: 30, top: 42 };
+  const timesH = 100, crewH = crew.top + crewRows * crew.lh;
+  const H = 64 + timesH + G + crewH + M;
   const p = setup(canvas, H);
   const { c, txt } = p;
   const v = (k) => fieldVal(f, k);
-  txt(brief.flight, M, 38, 18, c.tx2, { w: 600 });
-  txt(`${brief.org} → ${brief.dst}`, W - M, 38, 16, c.tx2, { align: 'right' });
-  let y = 56;
+  txt(brief.flight, M, 42, 22, c.tx2, { w: 600 });
+  txt(`${brief.org} → ${brief.dst}`, W - M, 42, 20, c.tx2, { align: 'right' });
+  let y = 64;
   const unit = (IW - G) / 3;
-  const big = { vs: 26 };
+  const big = { ls: 20, vs: 34 };
   cell(p, M, y, unit * 2, timesH, 'STD – STA', `${v('std')} – ${v('sta')}`, { ...big, missing: f.std.missing || f.sta.missing });
   cell(p, M + unit * 2 + G, y, unit, timesH, 'ETE', v('ete'), { ...big, missing: f.ete.missing });
   y += timesH + G;
   const half = (IW - G) / 2;
-  crewCell(p, M, y, half, crewH, 'קבינה', cab);
-  crewCell(p, M + half + G, y, half, crewH, 'קוקפיט', ck);
+  crewCell(p, M, y, half, crewH, 'קבינה', cab, crew);
+  crewCell(p, M + half + G, y, half, crewH, 'קוקפיט', ck, crew);
 }
 
 const DRAW = { full: drawFull, takeoff: drawTakeoff, cruise: drawCruise };
