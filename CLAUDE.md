@@ -15,7 +15,7 @@ PWA אישית לאייפד (וגם ל-Windows) שקוראת תדריך טיסה
 - **בלי שרת.** כל העיבוד בדפדפן, וקובץ התדריך לא יוצא מהמכשיר.
 - **אירוח:** GitHub Pages מענף `main` (שורש הריפו, `.nojekyll`). כתובת: `https://nitsan-beery.github.io/Flight_brief/`.
 - **PWA:** `manifest.webmanifest` ו-`sw.js`, ועובד גם בלי רשת.
-- **באייפד עובדים מ-Safari, לא מהמסך הבית.** הדפית הצפה היא Picture-in-Picture של וידאו (canvas → `captureStream`), לקריאה בלבד, ומאפליקציה מותקנת היא לא נפתחת (באג WebKit 303885). פרטים ב-`requirements.md` 5.1.2.
+- **באייפד עובדים מ-Safari או מהמסך הבית.** הכול צריך לעבוד בשני המצבים, חוץ מהדפית הצפה: היא Picture-in-Picture של וידאו (canvas → `captureStream`), לקריאה בלבד, ונפתחת רק מהדפדפן (באג WebKit 303885). מאפליקציה מותקנת הכפתור מנסה לפתוח, וכשזה נכשל מציג הסבר. פרטים ב-`requirements.md` 5.1.2.
 - **קריאת PDF:** PDF.js מוטמע ב-`vendor/pdfjs/`, עם מיקומי מילים (`getTextContent`). הניתוח דטרמיניסטי, לפי פורמט Lido, ולא מבוסס AI.
 - **אחסון:** IndexedDB על המכשיר.
 - **שפה:** עברית, RTL. נתוני התדריך (קודים, NOTAM, METAR/TAF) מוצגים כמות שהם, ב-LTR.
