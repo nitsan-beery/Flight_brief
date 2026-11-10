@@ -8,7 +8,7 @@ import { createFloat } from './float.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 13;
+const APP_VERSION = 14;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -76,12 +76,20 @@ async function openFloat(mode) {
   hideFloatMsg();
   // ב-Windows הדפית המלאה עוברת לחלון כמו שהיא, ולכן היא צריכה להיות בנויה גם כשפותחים ממסך הפתיחה.
   if (mode === 'full' && !float.docOpen() && !sheetEl?.isConnected) buildSheet();
-  showFloatMsg(await float.open(mode));
+  const msg = await float.open(mode);
+  showFloatMsg(msg);
+  return !msg;
 }
 
-function onFloatButton() {
+/** כפתור "חלון צף" במסך הדפית: פותח את הדפית המלאה וחוזר למסך הפתיחה (requirements.md, 5.0). */
+async function onFloatButton() {
   if (float.isOpen()) { float.close(); return; }
-  openFloat('full');
+  if (await openFloat('full')) goHome();
+}
+
+function goHome() {
+  if (history.state?.fromHome) history.back();
+  else { history.replaceState(null, '', location.pathname); route(); }
 }
 
 // ---- מסכים ----
@@ -227,10 +235,7 @@ async function start() {
   $('#float-btn').addEventListener('click', onFloatButton);
   for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', hideFloatMsg);
   for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
-  $('.back').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (history.state?.fromHome) history.back(); else { history.replaceState(null, '', location.pathname); route(); }
-  });
+  $('.back').addEventListener('click', (e) => { e.preventDefault(); goHome(); });
   addEventListener('popstate', route);
   addEventListener('hashchange', route);
   wireDrop();
