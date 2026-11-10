@@ -9,6 +9,7 @@
 // שלוש דפיות (mode): 'full' הדפית המלאה, 'takeoff' רק OPT, 'cruise' זמנים וצוות.
 
 import { MISSING } from './sheet.js';
+import { flightLabel } from './brief.js';
 
 const FONT = '-apple-system, system-ui, "Segoe UI", Arial, sans-serif';
 const W = 600;
@@ -191,7 +192,7 @@ function drawFull(canvas, brief, manual) {
   const { c, txt } = p;
   const v = (k) => fieldVal(f, k), m = (k) => manualVal(manual, k);
 
-  txt(brief.flight, M, 52, 30, c.tx, { w: 600 });
+  txt(flightLabel(brief), M, 52, 30, c.tx, { w: 600 });
   txt(`${brief.org} → ${brief.dst} · ${brief.reg} · ${v('type')}`, M, 80, 17, c.tx2);
   txt(v('date'), W - M, 44, 15, c.tx2, { align: 'right' });
   txt(`OFP ${brief.ofp}`, W - M, 66, 15, c.tx2, { align: 'right' });
@@ -260,7 +261,7 @@ function drawCruise(canvas, brief, manual) {
   const p = setup(canvas, H);
   const { c, txt } = p;
   const v = (k) => fieldVal(f, k);
-  txt(brief.flight, M, 42, 22, c.tx2, { w: 600 });
+  txt(flightLabel(brief), M, 42, 22, c.tx2, { w: 600 });
   txt(`${brief.org} → ${brief.dst}`, W - M, 42, 20, c.tx2, { align: 'right' });
   let y = 64;
   const unit = (IW - G) / 3;

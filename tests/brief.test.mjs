@@ -31,13 +31,13 @@ test('שדות הדפית מעמוד 1', () => {
   const res = parseBrief(page(GOOD));
   assert.equal(res.ok, true);
   const b = res.brief;
-  assert.equal(b.flight, 'LY123/05');
+  assert.equal(b.flight, '123 / 05');
   assert.equal(b.org, 'LLBG');
   assert.equal(b.dst, 'EDDF');
   assert.equal(b.reg, '4XABC');
   assert.equal(b.ofp, '2/0/1');
   assert.equal(b.pages, 40);
-  assert.equal(briefLabel(b), 'LY123 · 05Mar27 · LLBG–EDDF');
+  assert.equal(briefLabel(b), '123 · 05 Mar 27 · LLBG–EDDF');
   const v = (k) => b.fields[k].value;
   assert.equal(v('date'), '05/03/27');
   assert.equal(v('type'), '737-800W');

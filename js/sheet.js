@@ -1,6 +1,8 @@
 // דפית הטיסה במסך האפליקציה: ערכים מהתדריך (בלי תיבה) ושדות להזנה ידנית. בלי קישורים לקובץ (החלטת הבעלים).
 // requirements.md, סעיפים 5.1 ו-5.1.1.
 
+import { flightLabel } from './brief.js';
+
 export const MISSING = 'לא נמצא';
 
 /** ערכי ברירת המחדל של השדות הידניים. B.F מתחיל מערך התכנון. */
@@ -47,7 +49,7 @@ export function renderSheet(slot, brief, manual, on) {
   el.id = 'sheet';
   el.innerHTML = `
     <div class="fs-head">
-      <div><div class="fs-flight">${esc(brief.flight)}</div><div class="fs-route">${esc(`${brief.org} → ${brief.dst} · ${brief.reg} · ${type}`)}</div></div>
+      <div><div class="fs-flight">${esc(flightLabel(brief))}</div><div class="fs-route">${esc(`${brief.org} → ${brief.dst} · ${brief.reg} · ${type}`)}</div></div>
       <div class="fs-meta">${esc(val(f.date))}<br>OFP ${esc(brief.ofp)}</div>
     </div>
     <div class="sec">זמנים</div>

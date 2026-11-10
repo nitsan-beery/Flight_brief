@@ -90,7 +90,7 @@ export function parseBrief(page1) {
   return {
     ok: true,
     brief: {
-      flight: `LY${number}/${day}`,
+      flight: flightLabel({ number, day }),
       number,
       day,
       dateCode: `${day}${mon}${yy}`,
@@ -105,8 +105,11 @@ export function parseBrief(page1) {
   };
 }
 
-/** זיהוי קצר לכרטיס התדריך: "LY347 · 10Nov26 · LLBG–LSZH". */
-export const briefLabel = (b) => `LY${b.number} · ${b.dateCode} · ${b.org}–${b.dst}`;
+/** מספר הטיסה ויום בחודש, בלי LY: "347 / 10" (requirements.md, 5.1.1). מחושב בכל הצגה, גם לתדריך ששמור מגרסה קודמת. */
+export const flightLabel = (b) => `${b.number} / ${b.day}`;
+
+/** זיהוי קצר לכרטיס התדריך, בלי LY ועם רווחים בתאריך: "347 · 10 Nov 26 · LLBG–LSZH". */
+export const briefLabel = (b) => `${b.number} · ${b.dateCode.replace(/^(\d{2})([A-Za-z]{3})(\d{2})$/, '$1 $2 $3')} · ${b.org}–${b.dst}`;
 
 /** אותה טיסה באותו יום (למשל OFP מעודכן): הנתונים הידניים נשמרים (requirements.md, 5.0). */
 export const sameFlight = (a, b) => !!a && !!b && a.number === b.number && a.dateCode === b.dateCode && a.org === b.org && a.dst === b.dst;
