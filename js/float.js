@@ -292,14 +292,15 @@ function drawFull(canvas, brief, manual) {
  */
 function drawTakeoff(canvas, brief, manual) {
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
-  const h = 80, gap = 16, cw = (IW - 2 * gap) / 3;
-  const H = M + h + gap + h + M;
+  // בין השורות רווח גדול יותר מבין המשבצות (גרסה 35; עד אז 16).
+  const h = 80, gap = 16, rowGap = 28, cw = (IW - 2 * gap) / 3;
+  const H = M + h + rowGap + h + M;
   const p = setup(canvas, H);
   const m = (k) => manualVal(manual, k);
   const big = { ls: 15, vs: 28 };
   cell(p, M, M, cw, h, 'N1', m('n1'), big);
   cell(p, M + 2 * (cw + gap), M, cw, h, 'FLAPS', m('flap'), { ...big, warn: flapWarn(m('flap')) });
-  [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, M + i * (cw + gap), M + h + gap, cw, h, l, m(k), big));
+  [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, M + i * (cw + gap), M + h + rowGap, cw, h, l, m(k), big));
 }
 
 /** שיוט: שורת טיסה קטנה, צוות, ומתחתיו זמנים ו-SOB (requirements.md, 5.1.2, גרסה 30). */
