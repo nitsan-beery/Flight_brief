@@ -57,12 +57,13 @@ button svg,.back svg{width:18px;height:18px}
 .drop-label{font-weight:600;font-variant-numeric:tabular-nums}
 .drop-name{font-size:13px;color:var(--tx2);word-break:break-word}
 .drop-actions{display:flex;justify-content:center;gap:10px;margin-top:16px}
-.drop-pick,.drop-sheet{font-size:14px;width:140px;justify-content:center}
+.drop-pick{font-size:14px;width:140px;justify-content:center}
 .drop-error{font-size:14px;color:var(--bad);margin-top:6px}
 .drop-error:empty{display:none}
 
 /* כותרת מעל תיבה במסך הפתיחה */
 .list-title{font-size:14px;font-weight:400;color:var(--tx2);margin:20px 2px 8px}
+#float-box{margin-top:16px} /* בלי כותרת מגרסה 29 */
 .float-choices{display:flex;gap:8px;background:var(--sheet);border:1px solid var(--ln);border-radius:12px;padding:12px 14px}
 .float-choices button{flex:1;justify-content:center;padding:10px 6px}
 .float-choices button[aria-pressed="true"]{background:var(--ac);color:var(--sheet)}

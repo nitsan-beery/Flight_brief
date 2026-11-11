@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 28;
+const APP_VERSION = 29;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -88,13 +88,12 @@ async function openFloat(mode) {
 }
 
 /**
- * כפתורי החלון הצף במסך הפתיחה. "דפית טיסה" שלא נפתחת כחלון צף פותחת את מסך הדפית, בלי הודעה
- * (requirements.md, 5.0, גרסה 20).
+ * כפתורי החלון הצף במסך הפתיחה. "דפית טיסה" נפתחת בחלון הצף רק כשהוא כבר פתוח, ואחרת במסך הדפית
+ * (requirements.md, 5.0, גרסה 29).
  */
 async function onModeButton(mode) {
-  const wasOpen = float.mode() === mode;
-  const ok = await openFloat(mode);
-  if (mode === 'full' && !wasOpen && !ok) { hideFloatMsg(); openSheet(); }
+  if (mode === 'full' && !float.isOpen()) { hideFloatMsg(); openSheet(); return; }
+  await openFloat(mode);
 }
 
 function openSheet() { history.pushState({ fromHome: true }, '', '#sheet'); route(); }
@@ -413,7 +412,6 @@ function wireDrop() {
     if (e.target.closest('.drop-xfer, .xfer-msg')) { e.preventDefault(); return; }
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
     if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
-    if (e.target.closest('.drop-sheet')) { e.preventDefault(); openSheet(); return; }
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
   });
   drop.addEventListener('dragover', (e) => { e.preventDefault(); });
