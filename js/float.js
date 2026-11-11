@@ -6,7 +6,7 @@
 // מאפליקציה שהותקנה למסך הבית הפתיחה נכשלת (באג WebKit 303885): מנסים, וכשנכשל מציגים הסבר.
 // Windows (Chrome/Edge): הדפית המלאה ב-Document Picture-in-Picture, חלון HTML שאפשר לערוך בו.
 //
-// שלוש דפיות (mode): 'full' הדפית המלאה, 'takeoff' רק OPT, 'cruise' זמנים וצוות.
+// שלוש דפיות (mode): 'full' הדפית המלאה, 'takeoff' רק OPT, 'cruise' צוות, זמנים ו-SOB.
 
 import { MISSING } from './sheet.js';
 import { flightLabel, bfLow } from './brief.js';
@@ -168,21 +168,27 @@ const crewNames = (l) => l.map((s) => s.trim()).filter(Boolean);
 let measure = null;
 /**
  * שמות הצוות בשורות שנכנסות ברוחב: שורה ארוכה (השמות הפרטיים בקבינה) נשברת אחרי פסיק, והפסיק בסוף
- * השורה יורד. requirements.md, 3.3.
+ * השורה יורד. מה שעדיין ארוך מדי נשבר בין מילים. requirements.md, 3.3.
  */
 function wrapNames(names, size, maxW) {
   measure ??= document.createElement('canvas').getContext('2d');
   measure.font = `400 ${size}px ${FONT}`;
   const fits = (t) => measure.measureText(t).width <= maxW;
+  // אורז חלקים לשורות עם מפריד; חלק שלבדו ארוך מדי נשבר בין מילים (גרסה 30).
+  const pack = (parts, sep, out) => {
+    let line = '';
+    for (const part of parts) {
+      const t = line ? `${line}${sep}${part}` : part;
+      if (line && !fits(t)) { out.push(line); line = part; } else line = t;
+    }
+    if (line) out.push(line);
+  };
   const out = [];
   for (const n of names) {
     if (fits(n)) { out.push(n); continue; }
-    let line = '';
-    for (const seg of n.split(/\s*,\s*/)) {
-      const t = line ? `${line}, ${seg}` : seg;
-      if (line && !fits(t)) { out.push(line); line = seg; } else line = t;
-    }
-    out.push(line);
+    const byComma = [];
+    pack(n.split(/\s*,\s*/), ', ', byComma);
+    for (const l of byComma) if (fits(l)) out.push(l); else pack(l.split(' '), ' ', out);
   }
   return out;
 }
@@ -277,13 +283,18 @@ function drawTakeoff(canvas, brief, manual) {
   [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, M + i * (cw + gap), M + h + gap, cw, h, l, m(k), big));
 }
 
-/** שיוט: שורת טיסה קטנה, זמנים וצוות. */
+/** שיוט: שורת טיסה קטנה, צוות, ומתחתיו זמנים ו-SOB (requirements.md, 5.1.2, גרסה 30). */
 function drawCruise(canvas, brief, manual) {
   const f = brief.fields;
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
   const crew = { ls: 20, ns: 30, lh: 36, top: 40 }; // זמנים ושמות באותו גודל (גרסה 13)
-  const cw = (IW - G) / 2 - 24;
-  const cab = wrapNames(crewNames(manual.cab), crew.ns, cw), ck = wrapNames(crewNames(manual.ck), crew.ns, cw);
+  // הקבינה מתרחבת על חשבון הקוקפיט: הקוקפיט ברוחב השם הארוך שבו, ולא יותר מחצי (גרסה 30).
+  measure ??= document.createElement('canvas').getContext('2d');
+  measure.font = `400 ${crew.ns}px ${FONT}`;
+  const ckNeed = Math.max(0, ...crewNames(manual.ck).map((n) => measure.measureText(n).width)) + 24;
+  const half = (IW - G) / 2;
+  const ckW = Math.min(half, Math.max((IW - G) / 3, ckNeed)), cabW = IW - G - ckW;
+  const cab = wrapNames(crewNames(manual.cab), crew.ns, cabW - 24), ck = wrapNames(crewNames(manual.ck), crew.ns, ckW - 24);
   const crewRows = Math.max(1, cab.length, ck.length);
   const timesH = 100, crewH = crew.top + crewRows * crew.lh;
   const H = 64 + timesH + G + crewH + M;
@@ -293,14 +304,13 @@ function drawCruise(canvas, brief, manual) {
   txt(flightLabel(brief), M, 42, 22, c.tx2, { w: 600 });
   txt(`${brief.org} → ${brief.dst}`, W - M, 42, 20, c.tx2, { align: 'right' });
   let y = 64;
+  crewCell(p, M, y, cabW, crewH, 'קבינה', cab, crew);
+  crewCell(p, M + cabW + G, y, ckW, crewH, 'קוקפיט', ck, crew);
+  y += crewH + G;
   const unit = (IW - G) / 3;
   const big = { ls: 20, vs: 30 };
   cell(p, M, y, unit * 2, timesH, 'STD – STA', `${v('std')} – ${v('sta')}`, { ...big, missing: f.std.missing || f.sta.missing });
-  cell(p, M + unit * 2 + G, y, unit, timesH, 'ETE', v('ete'), { ...big, missing: f.ete.missing });
-  y += timesH + G;
-  const half = (IW - G) / 2;
-  crewCell(p, M, y, half, crewH, 'קבינה', cab, crew);
-  crewCell(p, M + half + G, y, half, crewH, 'קוקפיט', ck, crew);
+  cell(p, M + unit * 2 + G, y, unit, timesH, 'SOB', manualVal(manual, 'sob'), big);
 }
 
 const DRAW = { full: drawFull, takeoff: drawTakeoff, cruise: drawCruise };
