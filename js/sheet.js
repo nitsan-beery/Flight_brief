@@ -2,6 +2,7 @@
 // requirements.md, סעיפים 5.1 ו-5.1.1.
 
 import { flightLabel, sameFlight, bfBox, bfLow } from './brief.js';
+import { planOpt, OPT_KEYS } from './opt.js';
 
 export const MISSING = 'לא נמצא';
 
@@ -64,7 +65,8 @@ function crewCell(label, list, names) {
 
 /**
  * בונה את הדפית בתוך slot.
- * @param {{onChange:(manual)=>void, onCalendar?:()=>void}} on onCalendar: "עדכן מהיומן", רק כשהיומן מחובר (3.3)
+ * @param {{onChange:(manual)=>void, onCalendar?:()=>void, readOpt:(file:File)=>Promise<{ok:true,opt}|{ok:false,error:string}>}} on
+ *   onCalendar: "עדכן מהיומן", רק כשהיומן מחובר (3.3). readOpt: קריאת קובץ ה-OPT (5.1.3).
  * @returns {HTMLElement} הדפית עצמה (כדי שאפשר יהיה להעביר אותה לחלון צף ב-Windows)
  */
 export function renderSheet(slot, brief, manual, on) {
@@ -90,8 +92,9 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));align-items:start">${crewCell('קבינה', 'cab', manual.cab)}${crewCell('קוקפיט', 'ck', manual.ck)}</div>
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
-    <div class="sec">OPT</div>
+    <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מ-OPT</button></div>
     <div class="grid opt">${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
+    <div class="opt-msg" role="status" hidden><div class="opt-text"></div><div class="opt-vals" dir="ltr"></div><div class="opt-actions"><button type="button" class="pri opt-yes">החלף</button><button type="button" class="opt-no">בטל</button></div></div>
     <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');
@@ -106,7 +109,52 @@ export function renderSheet(slot, brief, manual, on) {
     if (t === bfInput) markBf();
     on.onChange(manual);
   });
+  // טעינת OPT מקובץ (requirements.md, 5.1.3). ההודעה והשאלה בתוך הדפית, כדי שיעבדו גם בחלון הצף.
+  const doc = el.ownerDocument;
+  const optMsg = el.querySelector('.opt-msg');
+  let pendingOpt = null;
+  const showOpt = (text, { bad = false, vals = null } = {}) => {
+    optMsg.querySelector('.opt-text').textContent = text;
+    optMsg.querySelector('.opt-vals').textContent = vals ? vals.join('\n') : '';
+    optMsg.querySelector('.opt-vals').hidden = !vals;
+    optMsg.querySelector('.opt-actions').hidden = !vals;
+    optMsg.classList.toggle('bad', bad);
+    optMsg.hidden = false;
+  };
+  const applyOpt = (opt, note) => {
+    for (const k of OPT_KEYS) {
+      manual[k] = opt[k];
+      el.querySelector(`input[data-k="${k}"]`).value = opt[k];
+    }
+    on.onChange(manual);
+    showOpt(note);
+  };
+  const pickOpt = () => {
+    pendingOpt = null;
+    // בתוך הדפית ולא מנותק: Safari ישן לא פותח בחירת קובץ מ-input שאינו במסמך.
+    el.querySelector('.opt-file')?.remove();
+    const input = Object.assign(doc.createElement('input'), { type: 'file', accept: 'application/pdf,.pdf', className: 'opt-file', hidden: true });
+    el.append(input);
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      input.remove();
+      if (!file) return;
+      showOpt('קורא את קובץ ה-OPT…');
+      const r = await on.readOpt(file);
+      if (!r.ok) { showOpt(r.error, { bad: true }); return; }
+      const plan = planOpt(r.opt, brief, manual);
+      if (!plan.ok) { showOpt(plan.error, { bad: true }); return; }
+      if (!plan.ask) { applyOpt(r.opt, plan.note); return; }
+      pendingOpt = { opt: r.opt, note: plan.note };
+      showOpt('להחליף את ערכי ה-OPT?', { vals: plan.ask });
+    });
+    input.click();
+  };
+
   el.addEventListener('click', (e) => {
+    if (e.target.closest('.opt-link')) { pickOpt(); return; }
+    if (e.target.closest('.opt-yes')) { if (pendingOpt) applyOpt(pendingOpt.opt, pendingOpt.note); pendingOpt = null; return; }
+    if (e.target.closest('.opt-no')) { pendingOpt = null; optMsg.hidden = true; return; }
     if (e.target.closest('.cal-link')) { on.onCalendar(); return; }
     const add = e.target.closest('[data-add]');
     if (add) {

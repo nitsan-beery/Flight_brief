@@ -2,7 +2,8 @@
 // כל העיבוד במכשיר. קובץ התדריך לא יוצא ממנו.
 
 import { openPdf, extractPage } from './pdf/extract.js';
-import { parseBrief, briefLabel, flightLabel } from './brief.js';
+import { parseBrief, briefLabel, flightLabel, toLines } from './brief.js';
+import { parseOpt } from './opt.js';
 import { renderSheet, nextManual, keptLines } from './sheet.js';
 import { createFloat } from './float.js';
 import { encodeTransfer, decodeTransfer } from './transfer.js';
@@ -10,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 26;
+const APP_VERSION = 27;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -153,8 +154,21 @@ function openBriefFile() {
 function buildSheet() {
   sheetEl = renderSheet($('#sheet-slot'), current.brief, current.manual, {
     onChange: (manual) => { current.manual = manual; float.update(); scheduleSave(); },
+    readOpt,
     ...(calSetting && { onCalendar: () => fillFromCalendar(calToken(), { fromSheet: true }) }),
   });
+}
+
+/** קריאת קובץ ההדפסה של ה-OPT (requirements.md, 5.1.3). הקובץ לא נשמר. */
+async function readOpt(file) {
+  try {
+    const doc = await openPdf(await file.arrayBuffer());
+    const page = await extractPage(doc, 1);
+    await doc.destroy();
+    return parseOpt(toLines(page.items));
+  } catch {
+    return { ok: false, error: 'לא ניתן לקרוא את הקובץ כ-PDF.' };
+  }
 }
 
 function renderSheetView() {
