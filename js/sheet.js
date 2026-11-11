@@ -1,14 +1,14 @@
 // דפית הטיסה במסך האפליקציה: ערכים מהתדריך (בלי תיבה) ושדות להזנה ידנית. בלי קישורים לקובץ (החלטת הבעלים).
 // requirements.md, סעיפים 5.1 ו-5.1.1.
 
-import { flightLabel, sameFlight } from './brief.js';
+import { flightLabel, sameFlight, bfBox } from './brief.js';
 
 export const MISSING = 'לא נמצא';
 
-/** ערכי ברירת המחדל של השדות הידניים. B.F מתחיל מערך התכנון. */
+/** ערכי ברירת המחדל של השדות הידניים. B.F מתחיל מערך התכנון, בטונות ומעוגל כלפי מעלה. */
 export function emptyManual(brief) {
   const bf = brief.fields.bf;
-  return { bf: bf.missing ? '' : bf.value, ck: [''], cab: [''], cg: '', sob: '', n1: '', v1: '', vr: '', v2: '' };
+  return { bf: bf.missing ? '' : bfBox(bf.value), ck: [''], cab: [''], cg: '', sob: '', n1: '', v1: '', vr: '', v2: '' };
 }
 
 const LS_OPT = ['cg', 'sob', 'n1', 'v1', 'vr', 'v2'];
@@ -70,6 +70,7 @@ function crewCell(label, list, names) {
 export function renderSheet(slot, brief, manual, on) {
   const f = brief.fields;
   const plan = f.bf.missing ? null : f.bf.value;
+  const planBox = plan === null ? null : bfBox(plan);
   const type = f.type.missing ? MISSING : f.type.value;
   const el = document.createElement('div');
   el.className = 'fs';
@@ -95,7 +96,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');
-  const markBf = () => bfInput.classList.toggle('chg', plan !== null && bfInput.value.trim() !== plan);
+  const markBf = () => bfInput.classList.toggle('chg', planBox !== null && bfInput.value.trim() !== planBox);
   markBf();
 
   el.addEventListener('input', (e) => {

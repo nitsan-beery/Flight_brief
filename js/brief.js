@@ -59,6 +59,16 @@ const thousands = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const tonnes = (kg) => (Math.round(kg / 100) / 10).toFixed(1);
 
 /**
+ * B.F לתיבה: TOTAL FUEL בטונות, מעוגל כלפי מעלה ל-100 ק"ג. requirements.md, 5.1.
+ * @param {string} kg ערך השדה bf, המספר המלא מהתדריך ("13049")
+ * @returns {string} "13.1"; ערך שאינו מספר ק"ג שלם (נתונים שהועתקו מגרסה ישנה) חוזר כמו שהוא.
+ */
+export function bfBox(kg) {
+  if (!/^\d+$/.test(kg)) return kg;
+  return (Math.ceil(Number(kg) / 100) / 10).toFixed(1);
+}
+
+/**
  * @param {{items: {s:string,x:number,y:number,w:number,h:number}[]}} page1 פריטי הטקסט של עמוד 1
  * @returns {{ok:true, brief:Brief} | {ok:false, error:string}}
  * Brief = {flight, number, day, org, dst, reg, type, date, ofp, pages, fields}
@@ -83,7 +93,7 @@ export function parseBrief(page1) {
   put('ete', /\bETE (\d{2})\.(\d{2})\b/, (m) => hhmm(m[1], m[2]));
   put('tf', /\bTRIP FUEL (\d+)\b/, (m) => thousands(m[1]));
   put('tow', /\bETOW (\d+)\b/, (m) => tonnes(Number(m[1])));
-  put('bf', /\bTOTAL FUEL (\d+)\b/, (m) => tonnes(Number(m[1])));
+  put('bf', /\bTOTAL FUEL (\d+)\b/, (m) => m[1]);
   put('type', /\bACFT TYPE (\S+)/, (m) => m[1].split('..')[0].replace(/\.+$/, ''));
   put('date', /\bDATE (\d{2})\/(\d{2})\/(\d{2})\b/, (m) => `${m[1]}/${m[2]}/${m[3]}`);
 
