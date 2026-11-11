@@ -44,7 +44,6 @@ test('שדות ריקים: נטען בלי שאלה', () => {
   const r = planOpt(opt, { org: 'EDDF' }, empty);
   assert.equal(r.ok, true);
   assert.equal(r.ask, null);
-  assert.equal(r.note, 'נטען מ-OPT: EDDF 25C, TOW 70100 KG. CG לא נמצא בקובץ.');
 });
 
 test('כבר יש ערכים: שאלה עם קיים וחדש', () => {

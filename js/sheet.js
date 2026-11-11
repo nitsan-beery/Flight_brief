@@ -128,14 +128,15 @@ export function renderSheet(slot, brief, manual, on) {
     optMsg.classList.toggle('bad', bad);
     optMsg.hidden = false;
   };
-  const applyOpt = (opt, note) => {
+  // אחרי טעינה מוצלחת אין הודעה (גרסה 32).
+  const applyOpt = (opt) => {
     for (const k of OPT_KEYS) {
       manual[k] = opt[k];
       el.querySelector(`input[data-k="${k}"]`).value = opt[k];
     }
     markFlap();
     on.onChange(manual);
-    showOpt(note);
+    optMsg.hidden = true;
   };
   const pickOpt = () => {
     pendingOpt = null;
@@ -152,8 +153,8 @@ export function renderSheet(slot, brief, manual, on) {
       if (!r.ok) { showOpt(r.error, { bad: true }); return; }
       const plan = planOpt(r.opt, brief, manual);
       if (!plan.ok) { showOpt(plan.error, { bad: true }); return; }
-      if (!plan.ask) { applyOpt(r.opt, plan.note); return; }
-      pendingOpt = { opt: r.opt, note: plan.note };
+      if (!plan.ask) { applyOpt(r.opt); return; }
+      pendingOpt = r.opt;
       showOpt('להחליף את ערכי ה-OPT?', { vals: plan.ask });
     });
     input.click();
@@ -161,7 +162,7 @@ export function renderSheet(slot, brief, manual, on) {
 
   el.addEventListener('click', (e) => {
     if (e.target.closest('.opt-link')) { pickOpt(); return; }
-    if (e.target.closest('.opt-yes')) { if (pendingOpt) applyOpt(pendingOpt.opt, pendingOpt.note); pendingOpt = null; return; }
+    if (e.target.closest('.opt-yes')) { if (pendingOpt) applyOpt(pendingOpt); pendingOpt = null; return; }
     if (e.target.closest('.opt-no')) { pendingOpt = null; optMsg.hidden = true; return; }
     if (e.target.closest('.cal-link')) { on.onCalendar(); return; }
     const add = e.target.closest('[data-add]');

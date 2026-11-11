@@ -40,13 +40,12 @@ const LABEL = { flap: 'FLAPS' };
 
 /**
  * מה לעשות עם הנתונים מול התדריך והדפית.
- * @returns {{ok:false, error} | {ok:true, ask:string[]|null, note:string}} ask: שורות "קיים → חדש" כשיש כבר ערכים.
+ * @returns {{ok:false, error} | {ok:true, ask:string[]|null}} ask: שורות "קיים → חדש" כשיש כבר ערכים.
  */
 export function planOpt(opt, brief, manual) {
   if (opt.apt !== brief.org) return { ok: false, error: `קובץ ה-OPT הוא ל-${opt.apt}, והתדריך יוצא מ-${brief.org}. הנתונים לא נטענו.` };
   const cur = (k) => String(manual[k] ?? '').trim();
   const has = OPT_KEYS.some(cur);
   const ask = has ? OPT_KEYS.map((k) => `${LABEL[k] ?? k.toUpperCase()} ${cur(k) || '—'} → ${opt[k]}`) : null;
-  const note = `נטען מ-OPT: ${opt.apt} ${opt.rwy}${opt.tow ? `, TOW ${opt.tow} KG` : ''}. CG לא נמצא בקובץ.`;
-  return { ok: true, ask, note };
+  return { ok: true, ask };
 }
