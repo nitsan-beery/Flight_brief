@@ -5,15 +5,16 @@ import { openPdf, extractPage } from './pdf/extract.js';
 import { parseBrief, briefLabel } from './brief.js';
 import { renderSheet, nextManual, keptLines } from './sheet.js';
 import { createFloat } from './float.js';
+import { encodeTransfer, decodeTransfer } from './transfer.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 17;
+const APP_VERSION = 18;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
 
-/** {fileName, bytes, brief, manual} או null */
+/** {fileName, bytes, brief, manual} או null. אחרי הדבקה (3.2): fileName ו-bytes הם null. */
 let current = null;
 let sheetEl = null;
 
@@ -108,9 +109,12 @@ function renderHome() {
   const drop = $('#drop');
   drop.classList.toggle('loaded', !!current);
   $('#float-box').hidden = !current;
+  $('.xfer-copy').disabled = !current;
   if (current) {
     $('.drop-label').textContent = briefLabel(current.brief);
-    $('.drop-name').textContent = current.fileName;
+    $('.drop-name').textContent = current.bytes ? current.fileName : 'הועבר מהעתקה – אין קובץ PDF';
+    $('.drop-name').dir = current.bytes ? 'ltr' : 'rtl';
+    $('.drop-file').classList.toggle('nofile', !current.bytes);
     float.prepare();
   }
 }
@@ -199,6 +203,40 @@ function askKeep(prevBrief, brief, keep) {
   });
 }
 
+// ---- העברת נתונים בהעתקה והדבקה (requirements.md, 3.2) ----
+
+function showXferMsg(text, ok) {
+  const m = $('.xfer-msg');
+  m.querySelector('.msg-text').textContent = text;
+  m.classList.toggle('ok', ok);
+  m.classList.toggle('bad', !ok);
+  m.hidden = false;
+}
+
+async function copyData() {
+  if (!current) return;
+  try {
+    await navigator.clipboard.writeText(encodeTransfer(current.brief, current.manual));
+    showXferMsg('הנתונים הועתקו. ב-Safari לחץ "הדבק נתונים".', true);
+  } catch {
+    showXferMsg('לא ניתן להעתיק ללוח.', false);
+  }
+}
+
+/** ההדבקה מחליפה הכול: התדריך והנתונים הידניים, בלי שאלה (נקבע על ידי הבעלים). */
+async function pasteData() {
+  let text;
+  try { text = await navigator.clipboard.readText(); } catch { showXferMsg('לא ניתן לקרוא מהלוח.', false); return; }
+  const res = decodeTransfer(text);
+  if (!res.ok) { showXferMsg(res.error, false); return; }
+  if (float.isOpen()) float.close();
+  current = { fileName: null, bytes: null, brief: res.brief, manual: res.manual };
+  await saveCurrent(current).catch(() => {});
+  float.update();
+  renderHome();
+  showXferMsg('הנתונים הודבקו.', true);
+}
+
 function wireDrop() {
   const drop = $('#drop');
   const input = drop.querySelector('input');
@@ -245,7 +283,9 @@ async function start() {
   darkQuery.addEventListener('change', () => { paintThemeButtons(); float.update(); });
   for (const b of document.querySelectorAll('.theme-btn')) b.addEventListener('click', toggleTheme);
   $('#float-btn').addEventListener('click', onFloatButton);
-  for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', hideFloatMsg);
+  for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', () => { b.closest('.msg').hidden = true; });
+  $('.xfer-copy').addEventListener('click', copyData);
+  $('.xfer-paste').addEventListener('click', pasteData);
   for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
   $('.back').addEventListener('click', (e) => { e.preventDefault(); goHome(); });
   addEventListener('popstate', route);
@@ -253,7 +293,7 @@ async function start() {
   wireDrop();
   registerServiceWorker();
   const saved = await loadCurrent();
-  if (saved?.brief && saved.bytes) current = { fileName: saved.fileName, bytes: saved.bytes, brief: saved.brief, manual: saved.manual };
+  if (saved?.brief && saved.manual) current = { fileName: saved.fileName, bytes: saved.bytes, brief: saved.brief, manual: saved.manual };
   route();
 }
 

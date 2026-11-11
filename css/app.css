@@ -56,7 +56,14 @@ button svg,.back svg{width:18px;height:18px}
 .float-choices{display:flex;gap:8px;background:var(--sheet);border:1px solid var(--ln);border-radius:12px;padding:12px 14px}
 .float-choices button{flex:1;justify-content:center;padding:10px 6px}
 .float-choices button[aria-pressed="true"]{background:var(--ac);color:var(--sheet)}
-#float-box .float-msg{margin-top:8px}
+#float-box .float-msg,.xfer-msg{margin-top:8px}
+button:disabled{opacity:.4;cursor:default}
+.xfer-msg.ok .msg-text{color:var(--ok)}
+.xfer-msg.bad .msg-text{color:var(--bad)}
+/* אחרי הדבקה אין קובץ PDF לפתוח (requirements.md, 3.2) */
+.drop-file.nofile{cursor:default}
+.drop-file.nofile:hover{border-color:var(--bx)}
+.drop-file.nofile>svg.ext{display:none}
 .foot{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:40px;font-size:13px;color:var(--tx3)}
 .foot button{font-size:13px;padding:4px 10px;border-color:var(--ac);color:var(--ac)}
 
