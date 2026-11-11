@@ -196,13 +196,17 @@ function cell(p, x, y, w, h, label, value, o = {}) {
   p.txt(value || '—', x + 20, y + h - (h - (o.ls ?? 16) - 7 - vs) / 2 - vs * 0.15, o.missing ? vs - 3 : vs, o.missing ? p.c.bad : (o.col || p.c.tx));
 }
 
-/** משבצת צוות: כותרת בעברית ושם בכל שורה, מיושר לימין. גובה: top + שורות * lh. */
+/** משבצת צוות: כותרת בעברית מימין, ושם בכל שורה. גובה: top + שורות * lh. */
 const CREW = { ls: 16, ns: 19, lh: 24, top: 34 };
+const HEB = /[֐-׿]/;
 function crewCell(p, x, y, w, h, label, names, o = CREW) {
   p.rr(x, y, w, h, 10, p.c.card);
   p.txt(label, x + w - 12, y + o.ls + 7, o.ls, p.c.tx2, { rtl: true, align: 'right' });
-  // שם בלי עברית (מהיומן) נכתב משמאל לימין, כדי שהפסיקים יישארו במקומם.
-  names.forEach((n, k) => p.txt(n, x + w - 12, y + o.ls + 7 + o.lh * (k + 1), o.ns, p.c.tx, { rtl: /[֐-׿]/.test(n), align: 'right' }));
+  // שם באנגלית משמאל, ושם בעברית מימין (requirements.md, 5.1.1, גרסה 21).
+  names.forEach((n, k) => {
+    const heb = HEB.test(n);
+    p.txt(n, heb ? x + w - 12 : x + 12, y + o.ls + 7 + o.lh * (k + 1), o.ns, p.c.tx, { rtl: heb, align: heb ? 'right' : 'left' });
+  });
 }
 
 /** הדפית המלאה, לפי העיצוב שבמסך (5.1.1). */

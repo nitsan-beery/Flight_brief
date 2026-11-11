@@ -58,7 +58,7 @@ function speed(label, key, value) {
 }
 
 function crewCell(label, list, names) {
-  const rows = (names.length ? names : ['']).map((n, i) => `<input class="nm" data-list="${list}" data-i="${i}" placeholder="שם" autocomplete="off" value="${esc(n)}" aria-label="${label} ${i + 1}">`).join('');
+  const rows = (names.length ? names : ['']).map((n, i) => `<input class="nm" dir="auto" data-list="${list}" data-i="${i}" placeholder="שם" autocomplete="off" value="${esc(n)}" aria-label="${label} ${i + 1}">`).join('');
   return `<div class="cell"><div class="lb heb">${label}</div><div class="names" data-list="${list}">${rows}</div><button type="button" class="add" data-add="${list}">+ הוסף</button></div>`;
 }
 
@@ -114,7 +114,7 @@ export function renderSheet(slot, brief, manual, on) {
       manual[list].push('');
       const box = el.querySelector(`.names[data-list="${list}"]`);
       const i = manual[list].length - 1;
-      const input = Object.assign(el.ownerDocument.createElement('input'), { className: 'nm', placeholder: 'שם', autocomplete: 'off' });
+      const input = Object.assign(el.ownerDocument.createElement('input'), { className: 'nm', dir: 'auto', placeholder: 'שם', autocomplete: 'off' });
       input.dataset.list = list;
       input.dataset.i = String(i);
       input.setAttribute('aria-label', `${list === 'ck' ? 'קוקפיט' : 'קבינה'} ${i + 1}`);
