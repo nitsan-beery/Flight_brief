@@ -74,6 +74,15 @@
         </div>
       </div>
 
+      <!-- שמות הצוות מיומן גוגל, רשות (requirements.md, 3.3) -->
+      <div id="cal-box">
+        <h2 class="list-title">יומן</h2>
+        <div class="float-choices cal-row">
+          <span class="cal-status"><span class="cal-name"></span><span class="cal-note" role="status"></span></span>
+          <button type="button" class="pri cal-btn"></button>
+        </div>
+      </div>
+
       <footer class="foot">
         <span>כלי עזר בלבד</span>
         <span id="app-version"></span>
@@ -90,6 +99,10 @@
         </span>
       </div>
       <div class="note msg float-msg" role="status" hidden>
+        <span class="msg-text"></span>
+        <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="note msg cal-msg" role="status" hidden>
         <span class="msg-text"></span>
         <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>

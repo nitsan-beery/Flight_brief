@@ -64,7 +64,7 @@ function crewCell(label, list, names) {
 
 /**
  * בונה את הדפית בתוך slot.
- * @param {{onChange:(manual)=>void}} on
+ * @param {{onChange:(manual)=>void, onCalendar?:()=>void}} on onCalendar: "עדכן מהיומן", רק כשהיומן מחובר (3.3)
  * @returns {HTMLElement} הדפית עצמה (כדי שאפשר יהיה להעביר אותה לחלון צף ב-Windows)
  */
 export function renderSheet(slot, brief, manual, on) {
@@ -86,7 +86,7 @@ export function renderSheet(slot, brief, manual, on) {
       ${briefCell('T.F', 'tf', f)}${briefCell('T.O.W', 'tow', f)}
       <div class="cell"><div class="lb">B.F (${esc(plan ?? MISSING)})</div><input data-k="bf" inputmode="decimal" autocomplete="off" value="${esc(manual.bf)}" aria-label="B.F"></div>
     </div>
-    <div class="sec">צוות</div>
+    <div class="sec sec-row"><span>צוות</span>${on.onCalendar ? '<button type="button" class="cal-link">עדכן מהיומן</button>' : ''}</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));align-items:start">${crewCell('קבינה', 'cab', manual.cab)}${crewCell('קוקפיט', 'ck', manual.ck)}</div>
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
@@ -107,6 +107,7 @@ export function renderSheet(slot, brief, manual, on) {
     on.onChange(manual);
   });
   el.addEventListener('click', (e) => {
+    if (e.target.closest('.cal-link')) { on.onCalendar(); return; }
     const add = e.target.closest('[data-add]');
     if (add) {
       const list = add.dataset.add;

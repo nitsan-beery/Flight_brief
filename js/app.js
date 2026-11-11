@@ -2,14 +2,15 @@
 // כל העיבוד במכשיר. קובץ התדריך לא יוצא ממנו.
 
 import { openPdf, extractPage } from './pdf/extract.js';
-import { parseBrief, briefLabel } from './brief.js';
+import { parseBrief, briefLabel, flightLabel } from './brief.js';
 import { renderSheet, nextManual, keptLines } from './sheet.js';
 import { createFloat } from './float.js';
 import { encodeTransfer, decodeTransfer } from './transfer.js';
-import { loadCurrent, saveCurrent } from './store.js';
+import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from './store.js';
+import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 18;
+const APP_VERSION = 19;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -17,6 +18,9 @@ const root = document.documentElement;
 /** {fileName, bytes, brief, manual} או null. אחרי הדבקה (3.2): fileName ו-bytes הם null. */
 let current = null;
 let sheetEl = null;
+/** היומן המחובר (3.3): {calendars:[{id,name}], hint, owner} או null. */
+let calSetting = null;
+let calBusy = false;
 
 // ---- ערכת צבעים: לפי המכשיר, וכפתור שמחליף בין בהיר לכהה ----
 
@@ -99,6 +103,7 @@ function route() {
   const wantSheet = location.hash === '#sheet' && current;
   if (location.hash === '#sheet' && !current) history.replaceState(null, '', location.pathname);
   if (!wantSheet) hideFloatMsg();
+  $('.cal-msg').hidden = true;
   $('#home').hidden = !!wantSheet;
   $('#sheet-view').hidden = !wantSheet;
   if (wantSheet) renderSheetView(); else renderHome();
@@ -110,6 +115,7 @@ function renderHome() {
   drop.classList.toggle('loaded', !!current);
   $('#float-box').hidden = !current;
   $('.xfer-copy').disabled = !current;
+  renderCal();
   if (current) {
     $('.drop-label').textContent = briefLabel(current.brief);
     $('.drop-name').textContent = current.bytes ? current.fileName : 'הועבר מהעתקה – אין קובץ PDF';
@@ -135,6 +141,7 @@ function openBriefFile() {
 function buildSheet() {
   sheetEl = renderSheet($('#sheet-slot'), current.brief, current.manual, {
     onChange: (manual) => { current.manual = manual; float.update(); scheduleSave(); },
+    ...(calSetting && { onCalendar: () => fillFromCalendar(calToken(), { fromSheet: true }) }),
   });
 }
 
@@ -159,7 +166,8 @@ function scheduleSave() {
 
 // ---- טעינת תדריך (requirements.md, 3.1) ----
 
-async function loadFile(file) {
+/** `pending`: ההרשאה ליומן, שהתבקשה ברגע הלחיצה (`calToken`), או null. */
+async function loadFile(file, pending = null) {
   const drop = $('#drop');
   const err = $('.drop-error');
   err.textContent = '';
@@ -184,6 +192,8 @@ async function loadFile(file) {
     await saveCurrent(current).catch(() => {});
     float.update();
     renderHome();
+    // טיסה אחרת (הצוות התאפס): השמות מהיומן. אותה טיסה: השמות הקיימים נשארים (requirements.md, 3.3).
+    if (calSetting && crewEmpty(manual)) await fillFromCalendar(pending);
   } finally {
     drop.classList.remove('busy');
     $('.drop-state').textContent = 'לא נבחר קובץ';
@@ -237,10 +247,110 @@ async function pasteData() {
   showXferMsg('הנתונים הודבקו.', true);
 }
 
+// ---- שמות הצוות מיומן גוגל (requirements.md, 3.3) ----
+
+const CAL_KEY = 'calendar';
+const crewEmpty = (m) => ![...m.ck, ...m.cab].some((s) => s.trim());
+
+/**
+ * ההרשאה ליומן. מתבקשת מיד, בתוך הלחיצה: כשהקודמת פגה גוגל פותח חלון, ו-Safari חוסם חלון שלא נפתח
+ * בתגובה ישירה ללחיצה. null: אין יומן, או שאין הרשאה בתוקף והלחיצה כבר פגה.
+ */
+function calToken() {
+  if (!calSetting || calBusy) return null;
+  const t = cal.cachedToken();
+  if (t) return Promise.resolve(t);
+  if (navigator.userActivation && !navigator.userActivation.isActive) return null;
+  const p = cal.requestToken({ hint: calSetting.hint });
+  p.catch(() => {}); // השגיאה מדווחת כשממתינים לה
+  return p;
+}
+
+let calNote = { text: '', ok: true };
+function setCalNote(text, ok, fromSheet = false) {
+  calNote = { text, ok };
+  renderCal();
+  const m = $('.cal-msg');
+  if (fromSheet) {
+    m.querySelector('.msg-text').textContent = text;
+    m.classList.toggle('ok', ok);
+    m.classList.toggle('bad', !ok);
+    m.hidden = false;
+  }
+}
+
+function renderCal() {
+  const name = $('.cal-name'), note = $('.cal-note'), btn = $('.cal-btn');
+  name.textContent = calSetting ? calSetting.calendars.map((c) => c.name).join(', ') : 'לא מחובר';
+  name.classList.toggle('off', !calSetting);
+  note.textContent = calBusy ? 'קורא מהיומן…' : calNote.text;
+  note.className = `cal-note${calBusy || !calNote.text ? '' : calNote.ok ? ' ok' : ' bad'}`;
+  btn.textContent = calSetting ? 'נתק' : 'חבר יומן';
+  btn.disabled = calBusy;
+}
+
+async function onCalButton() {
+  if (calSetting) {
+    await cal.revoke();
+    calSetting = null;
+    calNote = { text: '', ok: true };
+    await deleteSetting(CAL_KEY).catch(() => {});
+    renderCal();
+    return;
+  }
+  const pending = cal.requestToken();
+  calBusy = true;
+  renderCal();
+  try {
+    const token = await pending;
+    const found = await cal.discover(token);
+    if (!found.calendars.length) throw new Error('לא נמצאו ביומנים שלך אירועי סבב של האורגנייזר.');
+    calSetting = found;
+    await putSetting(CAL_KEY, calSetting).catch(() => {});
+    calNote = { text: '', ok: true };
+  } catch (e) {
+    calNote = { text: e.message, ok: false };
+  }
+  calBusy = false;
+  renderCal();
+  // תדריך שכבר טעון, בלי שמות: ממלאים מיד, באותה הרשאה.
+  const token = cal.cachedToken();
+  if (calSetting && current && token && crewEmpty(current.manual)) await fillFromCalendar(Promise.resolve(token));
+}
+
+/** השמות מהיומן לטיסה של התדריך, במקום השמות שבדפית. */
+async function fillFromCalendar(pending, { fromSheet = false } = {}) {
+  if (!calSetting || !current) return;
+  if (!pending) {
+    if (!calBusy) setCalNote('לא ניתן לגשת ליומן בלי לחיצה. לחץ "עדכן מהיומן" בדפית.', false, fromSheet);
+    return;
+  }
+  calBusy = true;
+  renderCal();
+  let note;
+  try {
+    const token = await pending;
+    const brief = current.brief;
+    const r = cal.crewFor(await cal.eventsAround(token, calSetting.calendars, brief), brief, calSetting.owner);
+    if (r.ok && current.brief === brief) {
+      current.manual = { ...current.manual, ck: r.ck, cab: r.cab };
+      await saveCurrent(current).catch(() => {});
+      float.update();
+      if (!$('#sheet-view').hidden && !float.docOpen()) buildSheet();
+    }
+    note = r.ok ? [`הצוות של ${flightLabel(brief)} נלקח מהיומן.`, true] : [r.error, false];
+  } catch (e) {
+    note = [e.message, false];
+  }
+  calBusy = false;
+  setCalNote(...note, fromSheet);
+}
+
 function wireDrop() {
   const drop = $('#drop');
   const input = drop.querySelector('input');
-  input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) loadFile(f); });
+  // ההרשאה ליומן מתבקשת כאן, ברגע הבחירה, לפני קריאת הקובץ (`calToken`).
+  input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) loadFile(f, calToken()); });
   // כשהתדריך טעון, רק הכפתור פותח את בחירת הקובץ.
   drop.addEventListener('click', (e) => {
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
@@ -249,7 +359,7 @@ function wireDrop() {
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
   });
   drop.addEventListener('dragover', (e) => { e.preventDefault(); });
-  drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+  drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadFile(f, calToken()); });
 }
 
 // ---- גרסה ועדכונים (requirements.md, 6.2) ----
@@ -286,12 +396,15 @@ async function start() {
   for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', () => { b.closest('.msg').hidden = true; });
   $('.xfer-copy').addEventListener('click', copyData);
   $('.xfer-paste').addEventListener('click', pasteData);
+  $('.cal-btn').addEventListener('click', onCalButton);
   for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
   $('.back').addEventListener('click', (e) => { e.preventDefault(); goHome(); });
   addEventListener('popstate', route);
   addEventListener('hashchange', route);
   wireDrop();
   registerServiceWorker();
+  calSetting = await getSetting(CAL_KEY);
+  if (calSetting) cal.preload();
   const saved = await loadCurrent();
   if (saved?.brief && saved.manual) current = { fileName: saved.fileName, bytes: saved.bytes, brief: saved.brief, manual: saved.manual };
   route();

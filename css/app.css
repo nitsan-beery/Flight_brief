@@ -90,6 +90,19 @@ button:disabled{opacity:.4;cursor:default}
 .fs .add{font-size:13px;color:var(--ac);background:none;border:none;padding:0;direction:rtl;display:flex;margin-left:auto}
 .legend{margin-top:16px;font-size:12px;color:var(--tx2);direction:rtl}
 
+/* יומן (requirements.md, 3.3) */
+.cal-row{align-items:center;justify-content:space-between}
+.float-choices.cal-row button{flex:none;padding:8px 16px}
+.cal-status{display:flex;flex-direction:column;min-width:0;font-size:15px}
+.cal-name{word-break:break-word}
+.cal-name.off{color:var(--tx2)}
+.cal-note{font-size:13px;color:var(--tx2)}
+.cal-note.ok{color:var(--ok)}
+.cal-note.bad,.cal-msg.bad .msg-text{color:var(--bad)}
+.cal-msg.ok .msg-text{color:var(--ok)}
+.fs .sec-row{display:flex;justify-content:space-between;align-items:center}
+.fs .cal-link{font-size:13px;color:var(--ac);background:none;border:none;padding:0}
+
 /* חלון השאלה בתדריך מעודכן (requirements.md, 5.0) */
 .dlg{border:none;border-radius:14px;background:var(--sheet);color:var(--tx);padding:20px 24px;width:min(420px,calc(100vw - 32px))}
 .dlg::backdrop{background:rgba(0,0,0,.35)}

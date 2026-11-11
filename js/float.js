@@ -164,6 +164,28 @@ function setup(canvas, H) {
 const fieldVal = (f, k) => (f[k].missing ? MISSING : f[k].value);
 const manualVal = (manual, k) => (manual[k] ?? '').trim();
 const crewNames = (l) => l.map((s) => s.trim()).filter(Boolean);
+
+let measure = null;
+/**
+ * שמות הצוות בשורות שנכנסות ברוחב: שורה ארוכה (השמות הפרטיים בקבינה) נשברת אחרי פסיק, והפסיק בסוף
+ * השורה יורד. requirements.md, 3.3.
+ */
+function wrapNames(names, size, maxW) {
+  measure ??= document.createElement('canvas').getContext('2d');
+  measure.font = `400 ${size}px ${FONT}`;
+  const fits = (t) => measure.measureText(t).width <= maxW;
+  const out = [];
+  for (const n of names) {
+    if (fits(n)) { out.push(n); continue; }
+    let line = '';
+    for (const seg of n.split(/\s*,\s*/)) {
+      const t = line ? `${line}, ${seg}` : seg;
+      if (line && !fits(t)) { out.push(line); line = seg; } else line = t;
+    }
+    out.push(line);
+  }
+  return out;
+}
 const M = 24, G = 12, IW = W - 2 * M;
 
 /** משבצת עם כותרת וערך. */
@@ -179,13 +201,15 @@ const CREW = { ls: 16, ns: 19, lh: 24, top: 34 };
 function crewCell(p, x, y, w, h, label, names, o = CREW) {
   p.rr(x, y, w, h, 10, p.c.card);
   p.txt(label, x + w - 12, y + o.ls + 7, o.ls, p.c.tx2, { rtl: true, align: 'right' });
-  names.forEach((n, k) => p.txt(n, x + w - 12, y + o.ls + 7 + o.lh * (k + 1), o.ns, p.c.tx, { rtl: true, align: 'right' }));
+  // שם בלי עברית (מהיומן) נכתב משמאל לימין, כדי שהפסיקים יישארו במקומם.
+  names.forEach((n, k) => p.txt(n, x + w - 12, y + o.ls + 7 + o.lh * (k + 1), o.ns, p.c.tx, { rtl: /[֐-׿]/.test(n), align: 'right' }));
 }
 
 /** הדפית המלאה, לפי העיצוב שבמסך (5.1.1). */
 function drawFull(canvas, brief, manual) {
   const f = brief.fields;
-  const cab = crewNames(manual.cab), ck = crewNames(manual.ck);
+  const cw = (IW - G) / 2 - 24;
+  const cab = wrapNames(crewNames(manual.cab), CREW.ns, cw), ck = wrapNames(crewNames(manual.ck), CREW.ns, cw);
   const crewRows = Math.max(1, cab.length, ck.length);
   const H = 630 + crewRows * 24; // כותרת 112, ארבעה מקטעים של 104, צוות 66 + שורות, תחתית 36
   const p = setup(canvas, H);
@@ -252,10 +276,11 @@ function drawTakeoff(canvas, brief, manual) {
 /** שיוט: שורת טיסה קטנה, זמנים וצוות. */
 function drawCruise(canvas, brief, manual) {
   const f = brief.fields;
-  const cab = crewNames(manual.cab), ck = crewNames(manual.ck);
-  const crewRows = Math.max(1, cab.length, ck.length);
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
   const crew = { ls: 20, ns: 30, lh: 36, top: 40 }; // זמנים ושמות באותו גודל (גרסה 13)
+  const cw = (IW - G) / 2 - 24;
+  const cab = wrapNames(crewNames(manual.cab), crew.ns, cw), ck = wrapNames(crewNames(manual.ck), crew.ns, cw);
+  const crewRows = Math.max(1, cab.length, ck.length);
   const timesH = 100, crewH = crew.top + crewRows * crew.lh;
   const H = 64 + timesH + G + crewH + M;
   const p = setup(canvas, H);

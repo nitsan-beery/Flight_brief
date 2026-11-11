@@ -37,3 +37,8 @@ async function run(mode, fn) {
 
 export const loadCurrent = () => run('readonly', (s) => s.get('current')).catch(() => null);
 export const saveCurrent = (rec) => run('readwrite', (s) => s.put({ ...rec, key: 'current' }));
+
+// הגדרות באותה טבלה, במפתח משלהן: 'calendar' – היומן המחובר (requirements.md, 3.3).
+export const getSetting = (key) => run('readonly', (s) => s.get(`setting:${key}`)).then((r) => r?.value ?? null).catch(() => null);
+export const putSetting = (key, value) => run('readwrite', (s) => s.put({ key: `setting:${key}`, value }));
+export const deleteSetting = (key) => run('readwrite', (s) => s.delete(`setting:${key}`));
