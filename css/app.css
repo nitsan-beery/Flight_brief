@@ -104,6 +104,7 @@ button:disabled{opacity:.4;cursor:default}
 /* יומן (requirements.md, 3.3) */
 .cal-row{align-items:center;justify-content:space-between}
 .float-choices.cal-row button{flex:none;padding:8px 16px}
+.cal-btns{display:flex;gap:8px;flex:none}
 .cal-status{display:flex;flex-direction:column;min-width:0;font-size:15px}
 .cal-name{word-break:break-word}
 .cal-name.off{color:var(--tx2)}

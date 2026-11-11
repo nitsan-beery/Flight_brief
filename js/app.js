@@ -10,7 +10,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 22;
+const APP_VERSION = 23;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -299,6 +299,8 @@ function renderCal() {
   note.className = `cal-note${calBusy || !calNote.text ? '' : calNote.ok ? ' ok' : ' bad'}`;
   btn.textContent = calSetting ? 'נתק' : 'חבר יומן';
   btn.disabled = calBusy;
+  $('.cal-sync').hidden = !calSetting;
+  $('.cal-sync').disabled = calBusy;
 }
 
 async function onCalButton() {
@@ -328,6 +330,34 @@ async function onCalButton() {
   // תדריך שכבר טעון, בלי שמות: ממלאים מיד, באותה הרשאה.
   const token = cal.cachedToken();
   if (calSetting && current && token && crewEmpty(current.manual)) await fillFromCalendar(Promise.resolve(token));
+}
+
+/**
+ * "עדכון": היומנים ובעל היומן מחדש, ואז השמות לתדריך הטעון, במקום השמות שבדפית (requirements.md, 3.3,
+ * גרסה 23). בלי יומן חדש נשארים היומנים שכבר מחוברים.
+ */
+async function onCalSync() {
+  const pending = calToken();
+  if (!pending) return;
+  calBusy = true;
+  renderCal();
+  let ok = false;
+  try {
+    const found = await cal.discover(await pending);
+    if (found.calendars.length) {
+      calSetting = { calendars: found.calendars, hint: found.hint ?? calSetting.hint, owner: found.owner ?? calSetting.owner };
+      await putSetting(CAL_KEY, calSetting).catch(() => {});
+      calNote = { text: 'היומן עודכן.', ok: true };
+    } else {
+      calNote = { text: 'לא נמצאו ביומנים שלך אירועי סבב של האורגנייזר.', ok: false };
+    }
+    ok = true;
+  } catch (e) {
+    calNote = { text: e.message, ok: false };
+  }
+  calBusy = false;
+  renderCal();
+  if (ok && current) await fillFromCalendar(pending);
 }
 
 /** השמות מהיומן לטיסה של התדריך, במקום השמות שבדפית. */
@@ -410,6 +440,7 @@ async function start() {
   $('.xfer-copy').addEventListener('click', copyData);
   $('.xfer-paste').addEventListener('click', pasteData);
   $('.cal-btn').addEventListener('click', onCalButton);
+  $('.cal-sync').addEventListener('click', onCalSync);
   for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => onModeButton(b.dataset.mode));
   $('.back').addEventListener('click', (e) => { e.preventDefault(); goHome(); });
   addEventListener('popstate', route);
