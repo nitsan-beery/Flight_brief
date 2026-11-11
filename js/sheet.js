@@ -97,7 +97,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
     <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מ-OPT</button></div>
     <div class="grid opt">${inputCell('FLAPS', 'flap', manual.flap, 'numeric')}${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
-    <div class="opt-msg" role="status" hidden><div class="opt-text"></div><div class="opt-vals" dir="ltr"></div><div class="opt-actions"><button type="button" class="pri opt-yes">החלף</button><button type="button" class="opt-no">בטל</button></div></div>
+    <div class="opt-msg" role="status" hidden></div>
     <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');
@@ -116,18 +116,30 @@ export function renderSheet(slot, brief, manual, on) {
     if (t === flapInput) markFlap();
     on.onChange(manual);
   });
-  // טעינת OPT מקובץ (requirements.md, 5.1.3). ההודעה והשאלה בתוך הדפית, כדי שיעבדו גם בחלון הצף.
-  const doc = el.ownerDocument;
+  // טעינת OPT מקובץ (requirements.md, 5.1.3). הודעות בתוך הדפית, והשאלה על החלפה בחלונית (גרסה 33).
+  // המסמך נלקח בכל פעם מחדש: ב-Windows הדפית עוברת לחלון הצף, שהוא מסמך אחר.
   const optMsg = el.querySelector('.opt-msg');
-  let pendingOpt = null;
-  const showOpt = (text, { bad = false, vals = null } = {}) => {
-    optMsg.querySelector('.opt-text').textContent = text;
-    optMsg.querySelector('.opt-vals').textContent = vals ? vals.join('\n') : '';
-    optMsg.querySelector('.opt-vals').hidden = !vals;
-    optMsg.querySelector('.opt-actions').hidden = !vals;
+  const showOpt = (text, bad = false) => {
+    optMsg.textContent = text;
     optMsg.classList.toggle('bad', bad);
     optMsg.hidden = false;
   };
+  /** "להחליף את ערכי ה-OPT?" בחלונית, באותו מסמך שבו הדפית מוצגת. */
+  const askReplace = (vals) => new Promise((resolve) => {
+    const doc = el.ownerDocument;
+    doc.querySelector('#opt-dlg')?.remove();
+    const dlg = doc.createElement('dialog');
+    dlg.id = 'opt-dlg';
+    dlg.className = 'dlg';
+    dlg.dir = 'rtl';
+    dlg.innerHTML = `<form method="dialog"><h2 class="dlg-title">להחליף את ערכי ה-OPT?</h2>
+      <div class="dlg-vals" dir="ltr"></div>
+      <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri" autofocus>החלף</button><button value="no">בטל</button></div></form>`;
+    dlg.querySelector('.dlg-vals').textContent = vals.join('\n');
+    dlg.addEventListener('close', () => { resolve(dlg.returnValue === 'yes'); dlg.remove(); });
+    doc.body.append(dlg);
+    dlg.showModal();
+  });
   // אחרי טעינה מוצלחת אין הודעה (גרסה 32).
   const applyOpt = (opt) => {
     for (const k of OPT_KEYS) {
@@ -139,7 +151,7 @@ export function renderSheet(slot, brief, manual, on) {
     optMsg.hidden = true;
   };
   const pickOpt = () => {
-    pendingOpt = null;
+    const doc = el.ownerDocument;
     // בתוך הדפית ולא מנותק: Safari ישן לא פותח בחירת קובץ מ-input שאינו במסמך.
     el.querySelector('.opt-file')?.remove();
     const input = Object.assign(doc.createElement('input'), { type: 'file', accept: 'application/pdf,.pdf', className: 'opt-file', hidden: true });
@@ -150,20 +162,17 @@ export function renderSheet(slot, brief, manual, on) {
       if (!file) return;
       showOpt('קורא את קובץ ה-OPT…');
       const r = await on.readOpt(file);
-      if (!r.ok) { showOpt(r.error, { bad: true }); return; }
+      if (!r.ok) { showOpt(r.error, true); return; }
       const plan = planOpt(r.opt, brief, manual);
-      if (!plan.ok) { showOpt(plan.error, { bad: true }); return; }
-      if (!plan.ask) { applyOpt(r.opt); return; }
-      pendingOpt = r.opt;
-      showOpt('להחליף את ערכי ה-OPT?', { vals: plan.ask });
+      if (!plan.ok) { showOpt(plan.error, true); return; }
+      optMsg.hidden = true;
+      if (!plan.ask || await askReplace(plan.ask)) applyOpt(r.opt);
     });
     input.click();
   };
 
   el.addEventListener('click', (e) => {
     if (e.target.closest('.opt-link')) { pickOpt(); return; }
-    if (e.target.closest('.opt-yes')) { if (pendingOpt) applyOpt(pendingOpt); pendingOpt = null; return; }
-    if (e.target.closest('.opt-no')) { pendingOpt = null; optMsg.hidden = true; return; }
     if (e.target.closest('.cal-link')) { on.onCalendar(); return; }
     const add = e.target.closest('[data-add]');
     if (add) {
