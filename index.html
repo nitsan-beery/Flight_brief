@@ -85,6 +85,22 @@
     </section>
   </main>
 
+  <!-- תדריך מעודכן לאותה טיסה ולאותו מטוס: להשאיר את ה-Loadsheet וה-OPT או לאפס (requirements.md, 5.0). -->
+  <dialog id="keep-dlg" class="dlg">
+    <form method="dialog">
+      <h2 class="dlg-title">תדריך מעודכן לאותה טיסה</h2>
+      <p class="dlg-sub">אותו מטוס (<bdi class="dlg-reg"></bdi>). OFP <bdi dir="ltr" class="dlg-ofp"></bdi></p>
+      <p class="dlg-sub">הצוות נשמר, ו-B.F חוזר לערך התכנון החדש.</p>
+      <p class="dlg-q">יש ערכים מהתדריך הקודם:</p>
+      <div class="dlg-vals" dir="ltr"></div>
+      <p class="dlg-q">להשאיר אותם או לאפס?</p>
+      <div class="dlg-actions">
+        <button value="keep" class="pri" autofocus>השאר</button>
+        <button value="reset">אפס</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- החלון הצף באייפד: הדפית מצוירת על canvas ומוזרמת לווידאו (requirements.md, 5.1.2). -->
   <canvas id="pip-canvas" width="600" height="760" aria-hidden="true"></canvas>
   <video id="pip-video" muted playsinline aria-hidden="true"></video>

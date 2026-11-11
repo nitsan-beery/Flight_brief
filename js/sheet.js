@@ -1,7 +1,7 @@
 // דפית הטיסה במסך האפליקציה: ערכים מהתדריך (בלי תיבה) ושדות להזנה ידנית. בלי קישורים לקובץ (החלטת הבעלים).
 // requirements.md, סעיפים 5.1 ו-5.1.1.
 
-import { flightLabel } from './brief.js';
+import { flightLabel, sameFlight } from './brief.js';
 
 export const MISSING = 'לא נמצא';
 
@@ -9,6 +9,33 @@ export const MISSING = 'לא נמצא';
 export function emptyManual(brief) {
   const bf = brief.fields.bf;
   return { bf: bf.missing ? '' : bf.value, ck: [''], cab: [''], cg: '', sob: '', n1: '', v1: '', vr: '', v2: '' };
+}
+
+const LS_OPT = ['cg', 'sob', 'n1', 'v1', 'vr', 'v2'];
+
+/**
+ * הנתונים הידניים לתדריך שנטען, לפי התדריך הקודם (requirements.md, 5.0, גרסה 17).
+ * @param {{brief, manual}|null} prev
+ * @returns {{manual, keep:object|null}} keep: הנתונים אם המשתמש יבחר "השאר"; null כשאין שאלה.
+ */
+export function nextManual(prev, brief) {
+  const fresh = emptyManual(brief);
+  if (!prev || !sameFlight(prev.brief, brief)) return { manual: fresh, keep: null };
+  const manual = { ...fresh, ck: prev.manual.ck, cab: prev.manual.cab };
+  const has = LS_OPT.some((k) => String(prev.manual[k] ?? '').trim());
+  if (prev.brief.reg !== brief.reg || !has) return { manual, keep: null };
+  const keep = { ...manual };
+  for (const k of LS_OPT) keep[k] = prev.manual[k] ?? '';
+  return { manual, keep };
+}
+
+/** שורות הערכים הקיימים לחלון השאלה: Loadsheet ו-OPT, רק מה שיש בו ערך. */
+export function keptLines(m) {
+  const t = (k) => String(m[k] ?? '').trim();
+  const ls = [t('cg') && `CG ${t('cg')}`, t('sob') && `SOB ${t('sob')}`].filter(Boolean);
+  const sp = ['v1', 'vr', 'v2'].map(t);
+  const opt = [t('n1') && `N1 ${t('n1')}`, sp.some(Boolean) && sp.map((x) => x || '—').join(' / ')].filter(Boolean);
+  return [ls.length && `Loadsheet:  ${ls.join(' · ')}`, opt.length && `OPT:  ${opt.join(' · ')}`].filter(Boolean);
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

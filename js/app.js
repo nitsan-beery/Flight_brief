@@ -2,13 +2,13 @@
 // כל העיבוד במכשיר. קובץ התדריך לא יוצא ממנו.
 
 import { openPdf, extractPage } from './pdf/extract.js';
-import { parseBrief, briefLabel, sameFlight } from './brief.js';
-import { renderSheet, emptyManual } from './sheet.js';
+import { parseBrief, briefLabel } from './brief.js';
+import { renderSheet, nextManual, keptLines } from './sheet.js';
 import { createFloat } from './float.js';
 import { loadCurrent, saveCurrent } from './store.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 16;
+const APP_VERSION = 17;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -173,10 +173,9 @@ async function loadFile(file) {
     }
     if (!res.ok) { err.textContent = `${file.name}: ${res.error}`; return; }
     const brief = res.brief;
-    const manual = current && sameFlight(current.brief, brief)
-      ? { ...current.manual, bf: emptyManual(brief).bf }
-      : emptyManual(brief);
+    const next = nextManual(current, brief);
     if (float.isOpen()) float.close();
+    const manual = next.keep && (await askKeep(current.brief, brief, next.keep)) ? next.keep : next.manual;
     current = { fileName: file.name, bytes, brief, manual };
     await saveCurrent(current).catch(() => {});
     float.update();
@@ -185,6 +184,19 @@ async function loadFile(file) {
     drop.classList.remove('busy');
     $('.drop-state').textContent = 'לא נבחר קובץ';
   }
+}
+
+/** "השאר" או "אפס". סגירה בלי בחירה (Esc) משאירה את הערכים (requirements.md, 5.0). */
+function askKeep(prevBrief, brief, keep) {
+  const dlg = $('#keep-dlg');
+  dlg.querySelector('.dlg-reg').textContent = brief.reg;
+  dlg.querySelector('.dlg-ofp').textContent = `${prevBrief.ofp} → ${brief.ofp}`;
+  dlg.querySelector('.dlg-vals').textContent = keptLines(keep).join('\n');
+  dlg.returnValue = '';
+  return new Promise((resolve) => {
+    dlg.addEventListener('close', () => resolve(dlg.returnValue !== 'reset'), { once: true });
+    dlg.showModal();
+  });
 }
 
 function wireDrop() {
