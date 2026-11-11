@@ -9,10 +9,13 @@ export const MISSING = 'לא נמצא';
 /** ערכי ברירת המחדל של השדות הידניים. B.F מתחיל מערך התכנון, בטונות ומעוגל כלפי מעלה. */
 export function emptyManual(brief) {
   const bf = brief.fields.bf;
-  return { bf: bf.missing ? '' : bfBox(bf.value), ck: [''], cab: [''], cg: '', sob: '', n1: '', v1: '', vr: '', v2: '' };
+  return { bf: bf.missing ? '' : bfBox(bf.value), ck: [''], cab: [''], cg: '', sob: '', flap: '', n1: '', v1: '', vr: '', v2: '' };
 }
 
-const LS_OPT = ['cg', 'sob', 'n1', 'v1', 'vr', 'v2'];
+/** FLAPS שאינו 5 ואינו ריק: משבצת בכתום, בדפית ובחלון הצף (requirements.md, 5.1.1, גרסה 31). */
+export const flapWarn = (v) => !['', '5'].includes(String(v ?? '').trim());
+
+const LS_OPT = ['cg', 'sob', 'flap', 'n1', 'v1', 'vr', 'v2'];
 
 /**
  * הנתונים הידניים לתדריך שנטען, לפי התדריך הקודם (requirements.md, 5.0, גרסה 17).
@@ -35,7 +38,7 @@ export function keptLines(m) {
   const t = (k) => String(m[k] ?? '').trim();
   const ls = [t('cg') && `CG ${t('cg')}`, t('sob') && `SOB ${t('sob')}`].filter(Boolean);
   const sp = ['v1', 'vr', 'v2'].map(t);
-  const opt = [t('n1') && `N1 ${t('n1')}`, sp.some(Boolean) && sp.map((x) => x || '—').join(' / ')].filter(Boolean);
+  const opt = [t('flap') && `FLAPS ${t('flap')}`, t('n1') && `N1 ${t('n1')}`, sp.some(Boolean) && sp.map((x) => x || '—').join(' / ')].filter(Boolean);
   return [ls.length && `Loadsheet:  ${ls.join(' · ')}`, opt.length && `OPT:  ${opt.join(' · ')}`].filter(Boolean);
 }
 
@@ -93,13 +96,16 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
     <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מ-OPT</button></div>
-    <div class="grid opt">${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
+    <div class="grid opt">${inputCell('FLAPS', 'flap', manual.flap, 'numeric')}${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
     <div class="opt-msg" role="status" hidden><div class="opt-text"></div><div class="opt-vals" dir="ltr"></div><div class="opt-actions"><button type="button" class="pri opt-yes">החלף</button><button type="button" class="opt-no">בטל</button></div></div>
     <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');
   const markBf = () => bfInput.classList.toggle('low', plan !== null && bfLow(bfInput.value, plan));
   markBf();
+  const flapInput = el.querySelector('input[data-k="flap"]');
+  const markFlap = () => flapInput.closest('.cell').classList.toggle('warn', flapWarn(flapInput.value));
+  markFlap();
 
   el.addEventListener('input', (e) => {
     const t = e.target;
@@ -107,6 +113,7 @@ export function renderSheet(slot, brief, manual, on) {
     else if (t.dataset.list) manual[t.dataset.list][Number(t.dataset.i)] = t.value;
     else return;
     if (t === bfInput) markBf();
+    if (t === flapInput) markFlap();
     on.onChange(manual);
   });
   // טעינת OPT מקובץ (requirements.md, 5.1.3). ההודעה והשאלה בתוך הדפית, כדי שיעבדו גם בחלון הצף.
@@ -126,6 +133,7 @@ export function renderSheet(slot, brief, manual, on) {
       manual[k] = opt[k];
       el.querySelector(`input[data-k="${k}"]`).value = opt[k];
     }
+    markFlap();
     on.onChange(manual);
     showOpt(note);
   };

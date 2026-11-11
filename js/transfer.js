@@ -8,7 +8,9 @@ import { flightLabel } from './brief.js';
 const PREFIX = 'FLIGHT-BRIEF:1:';
 const BRIEF_KEYS = ['number', 'day', 'dateCode', 'org', 'dst', 'reg', 'ofp'];
 const FIELD_KEYS = ['std', 'sta', 'ete', 'tf', 'tow', 'bf', 'type', 'date'];
-const TEXT_KEYS = ['bf', 'cg', 'sob', 'n1', 'v1', 'vr', 'v2'];
+const TEXT_KEYS = ['bf', 'cg', 'sob', 'flap', 'n1', 'v1', 'vr', 'v2'];
+/** שדות שנוספו אחרי שהקוד נקבע: קוד מגרסה ישנה בלעדיהם תקין, והם ריקים (FLAPS, גרסה 31). */
+const LATER_KEYS = ['flap'];
 
 const toB64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
 const fromB64 = (s) => new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(atob(s), (c) => c.charCodeAt(0)));
@@ -53,6 +55,7 @@ export function decodeTransfer(text) {
     else return bad;
   }
   const list = (l) => Array.isArray(l) && l.length > 0 && l.every(isStr);
+  for (const k of LATER_KEYS) m[k] ??= '';
   if (!list(m.ck) || !list(m.cab) || !TEXT_KEYS.every((k) => isStr(m[k]))) return bad;
   const manual = { ck: [...m.ck], cab: [...m.cab] };
   for (const k of TEXT_KEYS) manual[k] = m[k];

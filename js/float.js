@@ -8,7 +8,7 @@
 //
 // שלוש דפיות (mode): 'full' הדפית המלאה, 'takeoff' רק OPT, 'cruise' צוות, זמנים ו-SOB.
 
-import { MISSING } from './sheet.js';
+import { MISSING, flapWarn } from './sheet.js';
 import { flightLabel, bfLow } from './brief.js';
 
 const FONT = '-apple-system, system-ui, "Segoe UI", Arial, sans-serif';
@@ -140,13 +140,14 @@ function setup(canvas, H) {
   if (canvas.width !== W) canvas.width = W;
   if (canvas.height !== H) canvas.height = H;
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const c = { sheet: css('--sheet'), card: css('--card'), tx: css('--tx'), tx2: css('--tx2'), ac: css('--ac'), bad: css('--bad') };
+  const c = { sheet: css('--sheet'), card: css('--card'), tx: css('--tx'), tx2: css('--tx2'), ac: css('--ac'), bad: css('--bad'), warn: css('--warn'), warnBg: css('--warn-bg') };
   const ctx = canvas.getContext('2d');
-  const rr = (x, y, w, h, r, fill) => {
+  const rr = (x, y, w, h, r, fill, stroke = null) => {
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
     ctx.fillStyle = fill;
     ctx.fill();
+    if (stroke) { ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke(); }
   };
   const txt = (s, x, y, size, color, opt = {}) => {
     ctx.font = `${opt.w || 400} ${size}px ${FONT}`;
@@ -194,10 +195,11 @@ function wrapNames(names, size, maxW) {
 }
 const M = 24, G = 12, IW = W - 2 * M;
 
-/** משבצת עם כותרת וערך. */
+/** משבצת עם כותרת וערך. o.warn: משבצת בכתום, רקע, מסגרת וטקסט (requirements.md, 5.1.2, גרסה 31). */
 function cell(p, x, y, w, h, label, value, o = {}) {
-  p.rr(x, y, w, h, 10, p.c.card);
-  p.txt(label, x + 12, y + (o.ls ?? 16) + 7, o.ls ?? 16, p.c.tx2);
+  if (o.warn) o = { ...o, col: p.c.warn };
+  p.rr(x, y, w, h, 10, o.warn ? p.c.warnBg : p.c.card, o.warn ? p.c.warn : null);
+  p.txt(label, x + 12, y + (o.ls ?? 16) + 7, o.ls ?? 16, o.warn ? p.c.warn : p.c.tx2);
   const vs = o.vs ?? 21;
   p.txt(value || '—', x + 20, y + h - (h - (o.ls ?? 16) - 7 - vs) / 2 - vs * 0.15, o.missing ? vs - 3 : vs, o.missing ? p.c.bad : (o.col || p.c.tx));
 }
@@ -261,17 +263,21 @@ function drawFull(canvas, brief, manual) {
   section('Loadsheet');
   row([{ l: 'CG (MACTOW)', v: m('cg') }, { l: 'SOB', v: m('sob') }]);
   section('OPT');
-  // N1 במשבצת משלו ברווח כפול, וכל מהירות במשבצת משלה ברווח 8 (requirements.md, 5.1.1, גרסה 15).
+  // FLAPS ו-N1, ומהם ברווח כפול כל מהירות במשבצת משלה ברווח 8 (requirements.md, 5.1.1, גרסאות 15, 31).
   {
-    const h = 72, gap = 2 * G, n1w = (IW - gap) / 4, sg = 8;
-    cell(p, M, y, n1w, h, 'N1', m('n1'));
-    const sx = M + n1w + gap, sw = (IW - n1w - gap - 2 * sg) / 3;
+    const h = 72, gap = 2 * G, sg = 8, n1w = 104;
+    cell(p, M, y, n1w, h, 'FLAPS', m('flap'), { warn: flapWarn(m('flap')) });
+    cell(p, M + n1w + gap, y, n1w, h, 'N1', m('n1'));
+    const sx = M + 2 * (n1w + gap), sw = (IW - 2 * (n1w + gap) - 2 * sg) / 3;
     [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, sx + i * (sw + sg), y, sw, h, l, m(k)));
   }
   txt('כלי עזר בלבד', W - M, H - 20, 13, c.tx2, { rtl: true, align: 'right' });
 }
 
-/** המראה: רק OPT, בלי כותרת. N1 ממורכז למעלה, והמהירויות בשלוש משבצות נפרדות מתחתיו. */
+/**
+ * המראה: רק OPT, בלי כותרת. למעלה N1 משמאל ו-FLAPS מימין, והמהירויות בשלוש משבצות מתחתם.
+ * FLAPS שאינו 5 ואינו ריק בכתום (requirements.md, 5.1.2, גרסה 31).
+ */
 function drawTakeoff(canvas, brief, manual) {
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
   const h = 80, gap = 16, cw = (IW - 2 * gap) / 3;
@@ -279,7 +285,8 @@ function drawTakeoff(canvas, brief, manual) {
   const p = setup(canvas, H);
   const m = (k) => manualVal(manual, k);
   const big = { ls: 15, vs: 28 };
-  cell(p, M + cw + gap, M, cw, h, 'N1', m('n1'), big);
+  cell(p, M, M, cw, h, 'N1', m('n1'), big);
+  cell(p, M + 2 * (cw + gap), M, cw, h, 'FLAPS', m('flap'), { ...big, warn: flapWarn(m('flap')) });
   [['V1', 'v1'], ['VR', 'vr'], ['V2', 'v2']].forEach(([l, k], i) => cell(p, M + i * (cw + gap), M + h + gap, cw, h, l, m(k), big));
 }
 

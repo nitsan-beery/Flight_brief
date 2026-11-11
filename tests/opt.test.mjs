@@ -17,7 +17,7 @@ const GOOD = L(
 );
 
 test('N1 ו-V1/VR/V2 מקובץ OPT', () => {
-  assert.deepEqual(parseOpt(GOOD), { ok: true, opt: { apt: 'EDDF', rwy: '25C', tow: '70100', n1: '94.2', v1: '142', vr: '147', v2: '153' } });
+  assert.deepEqual(parseOpt(GOOD), { ok: true, opt: { apt: 'EDDF', rwy: '25C', tow: '70100', flap: '5', n1: '94.2', v1: '142', vr: '147', v2: '153' } });
 });
 
 test('קובץ שאינו OPT נדחה', () => {
@@ -32,7 +32,7 @@ test('חסרות מהירויות: נדחה, בלי ניחוש', () => {
 });
 
 const opt = parseOpt(GOOD).opt;
-const empty = { n1: '', v1: '', vr: '', v2: '', cg: '24.5' };
+const empty = { flap: '', n1: '', v1: '', vr: '', v2: '', cg: '24.5' };
 
 test('שדה המראה שונה משדה המוצא: לא נטען', () => {
   const r = planOpt(opt, { org: 'LLBG' }, empty);
@@ -49,5 +49,11 @@ test('שדות ריקים: נטען בלי שאלה', () => {
 
 test('כבר יש ערכים: שאלה עם קיים וחדש', () => {
   const r = planOpt(opt, { org: 'EDDF' }, { ...empty, n1: '93.0', v1: '140' });
-  assert.deepEqual(r.ask, ['N1 93.0 → 94.2', 'V1 140 → 142', 'VR — → 147', 'V2 — → 153']);
+  assert.deepEqual(r.ask, ['FLAPS — → 5', 'N1 93.0 → 94.2', 'V1 140 → 142', 'VR — → 147', 'V2 — → 153']);
+});
+
+test('בלי FLAP: נדחה', () => {
+  const r = parseOpt(GOOD.map((l) => ({ text: l.text.replace('FLAP 5', '') })));
+  assert.equal(r.ok, false);
+  assert.match(r.error, /FLAPS/);
 });

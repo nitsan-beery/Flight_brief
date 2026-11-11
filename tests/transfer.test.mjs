@@ -11,7 +11,7 @@ const brief = {
     tf: { value: '6,175' }, tow: { value: '67.9' }, bf: { value: '9.4' }, type: { missing: true }, date: { value: '05/03/27' },
   },
 };
-const manual = { bf: '9.6', ck: ['ישראל ישראלי', 'שם שני'], cab: [''], cg: '24.5', sob: '162', n1: '94.2', v1: '142', vr: '147', v2: '153' };
+const manual = { bf: '9.6', ck: ['ישראל ישראלי', 'שם שני'], cab: [''], cg: '24.5', sob: '162', flap: '5', n1: '94.2', v1: '142', vr: '147', v2: '153' };
 
 test('העתקה והדבקה מחזירות את אותם נתונים, בלי PDF ומיקומי מקור', () => {
   const code = encodeTransfer(brief, manual);
@@ -44,4 +44,12 @@ test('קוד פגום או חסר נדחה', () => {
   assert.equal(decodeTransfer(json({ ...ok, b: { ...ok.b, fields: { ...ok.b.fields, ete: {} } } })).ok, false);
   assert.equal(decodeTransfer(json({ ...ok, m: { ...ok.m, ck: [] } })).ok, false);
   assert.equal(decodeTransfer(json({ ...ok, m: { ...ok.m, n1: null } })).ok, false);
+});
+
+test('קוד מגרסה שלפני FLAPS: תקין, ו-FLAPS ריק', () => {
+  const ok = JSON.parse(decodeURIComponent(escape(atob(encodeTransfer(brief, manual).slice(15)))));
+  delete ok.m.flap;
+  const r = decodeTransfer(`FLIGHT-BRIEF:1:${btoa(unescape(encodeURIComponent(JSON.stringify(ok))))}`);
+  assert.equal(r.ok, true);
+  assert.equal(r.manual.flap, '');
 });
