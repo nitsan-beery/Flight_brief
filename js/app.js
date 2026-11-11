@@ -10,7 +10,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 19;
+const APP_VERSION = 20;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -85,6 +85,18 @@ async function openFloat(mode) {
   showFloatMsg(msg);
   return !msg;
 }
+
+/**
+ * כפתורי החלון הצף במסך הפתיחה. "דפית טיסה" שלא נפתחת כחלון צף פותחת את מסך הדפית, בלי הודעה
+ * (requirements.md, 5.0, גרסה 20).
+ */
+async function onModeButton(mode) {
+  const wasOpen = float.mode() === mode;
+  const ok = await openFloat(mode);
+  if (mode === 'full' && !wasOpen && !ok) { hideFloatMsg(); openSheet(); }
+}
+
+function openSheet() { history.pushState({ fromHome: true }, '', '#sheet'); route(); }
 
 /** כפתור "חלון צף" במסך הדפית: פותח את הדפית המלאה וחוזר למסך הפתיחה (requirements.md, 5.0). */
 async function onFloatButton() {
@@ -355,7 +367,7 @@ function wireDrop() {
   drop.addEventListener('click', (e) => {
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
     if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
-    if (e.target.closest('.drop-sheet')) { e.preventDefault(); history.pushState({ fromHome: true }, '', '#sheet'); route(); return; }
+    if (e.target.closest('.drop-sheet')) { e.preventDefault(); openSheet(); return; }
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
   });
   drop.addEventListener('dragover', (e) => { e.preventDefault(); });
@@ -397,7 +409,7 @@ async function start() {
   $('.xfer-copy').addEventListener('click', copyData);
   $('.xfer-paste').addEventListener('click', pasteData);
   $('.cal-btn').addEventListener('click', onCalButton);
-  for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
+  for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => onModeButton(b.dataset.mode));
   $('.back').addEventListener('click', (e) => { e.preventDefault(); goHome(); });
   addEventListener('popstate', route);
   addEventListener('hashchange', route);
