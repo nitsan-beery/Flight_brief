@@ -10,7 +10,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 21;
+const APP_VERSION = 22;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -365,6 +365,7 @@ function wireDrop() {
   input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) loadFile(f, calToken()); });
   // כשהתדריך טעון, רק הכפתור פותח את בחירת הקובץ.
   drop.addEventListener('click', (e) => {
+    if (e.target.closest('.drop-xfer, .xfer-msg')) { e.preventDefault(); return; }
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
     if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
     if (e.target.closest('.drop-sheet')) { e.preventDefault(); openSheet(); return; }

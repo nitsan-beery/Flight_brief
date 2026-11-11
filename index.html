@@ -31,6 +31,12 @@
 
       <label class="drop" id="drop">
         <input type="file" accept="application/pdf,.pdf" hidden>
+        <!-- העברת נתונים בין Safari, Chrome והאפליקציה, בצד ימין (requirements.md, 3.2) -->
+        <span class="drop-xfer">
+          <button type="button" class="xfer-copy">העתק נתונים</button>
+          <button type="button" class="xfer-paste">הדבק נתונים</button>
+        </span>
+        <span class="drop-main">
         <span class="drop-title">תדריך</span>
         <span class="drop-sub">קובץ PDF של תדריך הטיסה</span>
         <span class="drop-state">לא נבחר קובץ</span>
@@ -46,6 +52,11 @@
           </span>
         </span>
         <span class="drop-error" role="alert"></span>
+        </span>
+        <span class="note msg xfer-msg" role="status" hidden>
+          <span class="msg-text"></span>
+          <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </span>
       </label>
 
       <div id="float-box" hidden>
@@ -59,19 +70,6 @@
         <span class="msg-text"></span>
         <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
-      </div>
-
-      <!-- העברת נתונים בין Safari, Chrome והאפליקציה (requirements.md, 3.2) -->
-      <div id="xfer-box">
-        <h2 class="list-title">העברת נתונים</h2>
-        <div class="float-choices">
-          <button type="button" class="pri xfer-copy">העתק נתונים</button>
-          <button type="button" class="pri xfer-paste">הדבק נתונים</button>
-        </div>
-        <div class="note msg xfer-msg" role="status" hidden>
-          <span class="msg-text"></span>
-          <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-        </div>
       </div>
 
       <!-- שמות הצוות מיומן גוגל, רשות (requirements.md, 3.3) -->
