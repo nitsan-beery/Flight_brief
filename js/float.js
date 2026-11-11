@@ -195,6 +195,18 @@ function wrapNames(names, size, maxW) {
 }
 const M = 24, G = 12, IW = W - 2 * M;
 
+/**
+ * רוחב תיבות הצוות: הקבינה מתרחבת על חשבון הקוקפיט. הקוקפיט ברוחב השם הארוך שבו, לפחות שליש ולא
+ * יותר מחצי, והקבינה מקבלת את השאר (requirements.md, 5.1.2, גרסאות 30, 34).
+ */
+function crewWidths(ckList, size) {
+  measure ??= document.createElement('canvas').getContext('2d');
+  measure.font = `400 ${size}px ${FONT}`;
+  const need = Math.max(0, ...crewNames(ckList).map((n) => measure.measureText(n).width)) + 24;
+  const ckW = Math.min((IW - G) / 2, Math.max((IW - G) / 3, need));
+  return { cabW: IW - G - ckW, ckW };
+}
+
 /** משבצת עם כותרת וערך. o.warn: משבצת בכתום, רקע, מסגרת וטקסט (requirements.md, 5.1.2, גרסה 31). */
 function cell(p, x, y, w, h, label, value, o = {}) {
   if (o.warn) o = { ...o, col: p.c.warn };
@@ -220,8 +232,8 @@ function crewCell(p, x, y, w, h, label, names, o = CREW) {
 /** הדפית המלאה, לפי העיצוב שבמסך (5.1.1). */
 function drawFull(canvas, brief, manual) {
   const f = brief.fields;
-  const cw = (IW - G) / 2 - 24;
-  const cab = wrapNames(crewNames(manual.cab), CREW.ns, cw), ck = wrapNames(crewNames(manual.ck), CREW.ns, cw);
+  const { cabW, ckW } = crewWidths(manual.ck, CREW.ns);
+  const cab = wrapNames(crewNames(manual.cab), CREW.ns, cabW - 24), ck = wrapNames(crewNames(manual.ck), CREW.ns, ckW - 24);
   const crewRows = Math.max(1, cab.length, ck.length);
   const H = 630 + crewRows * 24; // כותרת 112, ארבעה מקטעים של 104, צוות 66 + שורות, תחתית 36
   const p = setup(canvas, H);
@@ -259,7 +271,7 @@ function drawFull(canvas, brief, manual) {
     { l: `B.F (${plan ?? MISSING})`, v: bf, col: plan !== null && bfLow(bf, plan) ? c.bad : c.tx },
   ]);
   section('צוות');
-  row([{ l: 'קבינה', lines: cab }, { l: 'קוקפיט', lines: ck }], 34 + crewRows * 24);
+  row([{ l: 'קבינה', lines: cab, f: cabW }, { l: 'קוקפיט', lines: ck, f: ckW }], 34 + crewRows * 24);
   section('Loadsheet');
   row([{ l: 'CG (MACTOW)', v: m('cg') }, { l: 'SOB', v: m('sob') }]);
   section('OPT');
@@ -295,12 +307,7 @@ function drawCruise(canvas, brief, manual) {
   const f = brief.fields;
   // גדלים: requirements.md, 5.1.2 (גרסה 10).
   const crew = { ls: 20, ns: 30, lh: 36, top: 40 }; // זמנים ושמות באותו גודל (גרסה 13)
-  // הקבינה מתרחבת על חשבון הקוקפיט: הקוקפיט ברוחב השם הארוך שבו, ולא יותר מחצי (גרסה 30).
-  measure ??= document.createElement('canvas').getContext('2d');
-  measure.font = `400 ${crew.ns}px ${FONT}`;
-  const ckNeed = Math.max(0, ...crewNames(manual.ck).map((n) => measure.measureText(n).width)) + 24;
-  const half = (IW - G) / 2;
-  const ckW = Math.min(half, Math.max((IW - G) / 3, ckNeed)), cabW = IW - G - ckW;
+  const { cabW, ckW } = crewWidths(manual.ck, crew.ns);
   const cab = wrapNames(crewNames(manual.cab), crew.ns, cabW - 24), ck = wrapNames(crewNames(manual.ck), crew.ns, ckW - 24);
   const crewRows = Math.max(1, cab.length, ck.length);
   const timesH = 100, crewH = crew.top + crewRows * crew.lh;

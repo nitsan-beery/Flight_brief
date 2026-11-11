@@ -92,7 +92,7 @@ export function renderSheet(slot, brief, manual, on) {
       <div class="cell"><div class="lb">B.F (${esc(plan ?? MISSING)})</div><input data-k="bf" inputmode="decimal" autocomplete="off" value="${esc(manual.bf)}" aria-label="B.F"></div>
     </div>
     <div class="sec sec-row"><span>צוות</span>${on.onCalendar ? '<button type="button" class="cal-link">עדכן מהיומן</button>' : ''}</div>
-    <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));align-items:start">${crewCell('קבינה', 'cab', manual.cab)}${crewCell('קוקפיט', 'ck', manual.ck)}</div>
+    <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:start">${crewCell('קבינה', 'cab', manual.cab)}${crewCell('קוקפיט', 'ck', manual.ck)}</div>
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
     <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מ-OPT</button></div>
