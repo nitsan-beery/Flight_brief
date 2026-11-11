@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 27;
+const APP_VERSION = 28;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -241,8 +241,9 @@ function askKeep(prevBrief, brief, keep) {
 
 // ---- העברת נתונים בהעתקה והדבקה (requirements.md, 3.2) ----
 
+/** ההודעה במסך שמוצג: מסך הפתיחה או הדפית (שבה יש "העתק נתונים", גרסה 28). */
 function showXferMsg(text, ok) {
-  const m = $('.xfer-msg');
+  const m = document.querySelector('.screen:not([hidden]) .xfer-msg') ?? $('.xfer-msg');
   m.querySelector('.msg-text').textContent = text;
   m.classList.toggle('ok', ok);
   m.classList.toggle('bad', !ok);
@@ -451,7 +452,7 @@ async function start() {
   for (const b of document.querySelectorAll('.theme-btn')) b.addEventListener('click', toggleTheme);
   $('#float-btn').addEventListener('click', onFloatButton);
   for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', () => { b.closest('.msg').hidden = true; });
-  $('.xfer-copy').addEventListener('click', copyData);
+  for (const b of document.querySelectorAll('.xfer-copy')) b.addEventListener('click', copyData);
   $('.xfer-paste').addEventListener('click', pasteData);
   $('.cal-btn').addEventListener('click', onCalButton);
   $('.cal-sync').addEventListener('click', onCalSync);

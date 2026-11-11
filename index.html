@@ -95,11 +95,16 @@
       <div class="bar">
         <a href="#" class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>חזרה</a>
         <span class="bar-actions">
+          <button type="button" class="pri xfer-copy">העתק נתונים</button>
           <button type="button" id="float-btn" class="pri"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1"/></svg><span>חלון צף</span></button>
           <button type="button" class="icon-btn theme-btn" aria-label="מצב בהיר או כהה"></button>
         </span>
       </div>
       <div class="note msg float-msg" role="status" hidden>
+        <span class="msg-text"></span>
+        <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="note msg xfer-msg" role="status" hidden>
         <span class="msg-text"></span>
         <button type="button" class="icon-btn msg-close" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
