@@ -46,14 +46,14 @@ test('שדות הדפית מעמוד 1', () => {
   assert.equal(v('ete'), '04:05');
   assert.equal(v('tf'), '9,876');
   assert.equal(v('tow'), '70.0');
-  assert.equal(v('bf'), '13049');
+  assert.equal(v('bf'), '13,049');
 });
 
 test('B.F לתיבה: טונות, מעוגל כלפי מעלה', () => {
-  assert.equal(bfBox('13049'), '13.1');
-  assert.equal(bfBox('13001'), '13.1');
-  assert.equal(bfBox('13000'), '13.0');
-  assert.equal(bfBox('9401'), '9.5');
+  assert.equal(bfBox('13,049'), '13.1');
+  assert.equal(bfBox('13,001'), '13.1');
+  assert.equal(bfBox('13,000'), '13.0');
+  assert.equal(bfBox('9,401'), '9.5');
   assert.equal(bfBox('9.4'), '9.4');
 });
 
