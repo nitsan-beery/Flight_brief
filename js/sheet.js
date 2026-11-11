@@ -1,7 +1,7 @@
 // דפית הטיסה במסך האפליקציה: ערכים מהתדריך (בלי תיבה) ושדות להזנה ידנית. בלי קישורים לקובץ (החלטת הבעלים).
 // requirements.md, סעיפים 5.1 ו-5.1.1.
 
-import { flightLabel, sameFlight, bfBox } from './brief.js';
+import { flightLabel, sameFlight, bfBox, bfLow } from './brief.js';
 
 export const MISSING = 'לא נמצא';
 
@@ -70,7 +70,6 @@ function crewCell(label, list, names) {
 export function renderSheet(slot, brief, manual, on) {
   const f = brief.fields;
   const plan = f.bf.missing ? null : f.bf.value;
-  const planBox = plan === null ? null : bfBox(plan);
   const type = f.type.missing ? MISSING : f.type.value;
   const el = document.createElement('div');
   el.className = 'fs';
@@ -96,7 +95,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="legend">כלי עזר בלבד</div>`;
 
   const bfInput = el.querySelector('input[data-k="bf"]');
-  const markBf = () => bfInput.classList.toggle('chg', planBox !== null && bfInput.value.trim() !== planBox);
+  const markBf = () => bfInput.classList.toggle('low', plan !== null && bfLow(bfInput.value, plan));
   markBf();
 
   el.addEventListener('input', (e) => {

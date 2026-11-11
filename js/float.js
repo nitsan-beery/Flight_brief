@@ -9,7 +9,7 @@
 // שלוש דפיות (mode): 'full' הדפית המלאה, 'takeoff' רק OPT, 'cruise' זמנים וצוות.
 
 import { MISSING } from './sheet.js';
-import { flightLabel, bfBox } from './brief.js';
+import { flightLabel, bfLow } from './brief.js';
 
 const FONT = '-apple-system, system-ui, "Segoe UI", Arial, sans-serif';
 const W = 600;
@@ -248,7 +248,7 @@ function drawFull(canvas, brief, manual) {
   row([
     { l: 'T.F', v: v('tf'), missing: f.tf.missing },
     { l: 'T.O.W', v: v('tow'), missing: f.tow.missing },
-    { l: `B.F (${plan ?? MISSING})`, v: bf, col: plan !== null && bf !== bfBox(plan) ? c.ac : c.tx },
+    { l: `B.F (${plan ?? MISSING})`, v: bf, col: plan !== null && bfLow(bf, plan) ? c.bad : c.tx },
   ]);
   section('צוות');
   row([{ l: 'קבינה', lines: cab }, { l: 'קוקפיט', lines: ck }], 34 + crewRows * 24);

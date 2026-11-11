@@ -1,7 +1,7 @@
 // בדיקות לניתוח עמוד 1, על נתונים סינתטיים בלבד (CLAUDE.md: אסור תדריך אמיתי בריפו).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseBrief, toLines, briefLabel, sameFlight, bfBox } from '../js/brief.js';
+import { parseBrief, toLines, briefLabel, sameFlight, bfBox, bfLow } from '../js/brief.js';
 
 /** עמוד סינתטי: כל שורה היא רשימת [x, טקסט]. השורות במרווח 12 יחידות. */
 function page(rows) {
@@ -55,6 +55,17 @@ test('B.F לתיבה: טונות, מעוגל כלפי מעלה', () => {
   assert.equal(bfBox('13,000'), '13.0');
   assert.equal(bfBox('9,401'), '9.5');
   assert.equal(bfBox('9.4'), '9.4');
+});
+
+test('B.F באדום רק כשהוא נמוך מהדלק בתדריך', () => {
+  assert.equal(bfLow('13.1', '13,049'), false);
+  assert.equal(bfLow('13.049', '13,049'), false);
+  assert.equal(bfLow('14', '13,049'), false);
+  assert.equal(bfLow('13.0', '13,049'), true);
+  assert.equal(bfLow('13,0', '13,049'), true);
+  assert.equal(bfLow('', '13,049'), false);
+  assert.equal(bfLow('abc', '13,049'), false);
+  assert.equal(bfLow('9.0', '9.4'), false);
 });
 
 test('לכל שדה שנמצא יש מלבן מקור בשורה הנכונה', () => {

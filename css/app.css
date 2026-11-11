@@ -95,7 +95,7 @@ button:disabled{opacity:.4;cursor:default}
 .fs .v.missing{font-size:15px;color:var(--bad)}
 .fs input{font:inherit;width:100%;background:var(--fld);color:var(--tx);border:1px solid var(--bx);border-radius:8px;height:36px;font-size:18px;padding:0 8px;font-variant-numeric:tabular-nums}
 .fs input:focus{border-color:var(--ac);outline:none}
-.fs input.chg{color:var(--ac)}
+.fs input.low{color:var(--bad)}
 /* שם באנגלית משמאל ושם בעברית מימין, לפי השפה (dir="auto"; requirements.md, 5.1.1) */
 .fs input.nm{font-size:16px;text-align:start;margin-bottom:6px}
 .fs .add{font-size:13px;color:var(--ac);background:none;border:none;padding:0;direction:rtl;display:flex;margin-left:auto}

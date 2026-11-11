@@ -69,6 +69,18 @@ export function bfBox(kg) {
 }
 
 /**
+ * האם ה-B.F שבתיבה נמוך מהדלק בתדריך (מוצג באדום). requirements.md, 5.1.
+ * @param {string} box הערך בתיבה, בטונות ("13.0" או "13,0")
+ * @param {string} kg ערך השדה bf ("13,049")
+ * @returns {boolean} false כשאחד הערכים אינו מספר: אין צבע, ואין ניחוש.
+ */
+export function bfLow(box, kg) {
+  const t = String(box ?? '').trim().replace(',', '.');
+  if (!/^\d+(\.\d*)?$/.test(t) || !/^\d{1,3}(,\d{3})*$/.test(kg)) return false;
+  return Math.round(Number(t) * 1000) < Number(kg.replace(/,/g, ''));
+}
+
+/**
  * @param {{items: {s:string,x:number,y:number,w:number,h:number}[]}} page1 פריטי הטקסט של עמוד 1
  * @returns {{ok:true, brief:Brief} | {ok:false, error:string}}
  * Brief = {flight, number, day, org, dst, reg, type, date, ofp, pages, fields}
