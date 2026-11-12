@@ -67,7 +67,6 @@ button svg,.back svg{width:18px;height:18px}
 .tile:hover{border-color:var(--ac)}
 .tile svg{width:28px;height:28px;color:var(--ac);margin-bottom:6px}
 .tile-name{font-size:16px;font-weight:600}
-.tile-sub{font-size:13px;color:var(--tx2)}
 
 /* מתג בין התוצרים, בסרגל של מסך התוצר */
 .seg{display:inline-flex;border:1px solid var(--bx);border-radius:8px;overflow:hidden;flex:none}
