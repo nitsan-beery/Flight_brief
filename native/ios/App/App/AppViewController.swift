@@ -13,5 +13,6 @@ class AppViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(GoogleAuthPlugin())
         bridge?.registerPluginInstance(WebUpdatePlugin())
+        bridge?.registerPluginInstance(IncomingFilePlugin())
     }
 }

@@ -14,6 +14,7 @@
 		F1B0A0022FF0000100A1B2C3 /* AppViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B0A0012FF0000100A1B2C3 /* AppViewController.swift */; };
 		F1B0A0042FF0000100A1B2C3 /* GoogleAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B0A0032FF0000100A1B2C3 /* GoogleAuthPlugin.swift */; };
 		F1B0A0062FF0000100A1B2C3 /* WebUpdatePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B0A0052FF0000100A1B2C3 /* WebUpdatePlugin.swift */; };
+		F1B0A0082FF0000100A1B2C3 /* IncomingFilePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B0A0072FF0000100A1B2C3 /* IncomingFilePlugin.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
@@ -29,6 +30,7 @@
 		F1B0A0012FF0000100A1B2C3 /* AppViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewController.swift; sourceTree = "<group>"; };
 		F1B0A0032FF0000100A1B2C3 /* GoogleAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleAuthPlugin.swift; sourceTree = "<group>"; };
 		F1B0A0052FF0000100A1B2C3 /* WebUpdatePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebUpdatePlugin.swift; sourceTree = "<group>"; };
+		F1B0A0072FF0000100A1B2C3 /* IncomingFilePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomingFilePlugin.swift; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 				F1B0A0012FF0000100A1B2C3 /* AppViewController.swift */,
 				F1B0A0032FF0000100A1B2C3 /* GoogleAuthPlugin.swift */,
 				F1B0A0052FF0000100A1B2C3 /* WebUpdatePlugin.swift */,
+				F1B0A0072FF0000100A1B2C3 /* IncomingFilePlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -171,6 +174,7 @@
 				F1B0A0022FF0000100A1B2C3 /* AppViewController.swift in Sources */,
 				F1B0A0042FF0000100A1B2C3 /* GoogleAuthPlugin.swift in Sources */,
 				F1B0A0062FF0000100A1B2C3 /* WebUpdatePlugin.swift in Sources */,
+				F1B0A0082FF0000100A1B2C3 /* IncomingFilePlugin.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -150,23 +150,27 @@ export function renderSheet(slot, brief, manual, on) {
     on.onChange(manual);
     optMsg.hidden = true;
   };
+  /** קובץ OPT, מ"טען מ-OPT" או מתפריט "שתף" באפליקציית ה-iOS (6.5). */
+  const loadOpt = async (file) => {
+    showOpt('קורא את קובץ ה-OPT…');
+    const r = await on.readOpt(file);
+    if (!r.ok) { showOpt(r.error, true); return; }
+    const plan = planOpt(r.opt, brief, manual);
+    if (!plan.ok) { showOpt(plan.error, true); return; }
+    optMsg.hidden = true;
+    if (!plan.ask || await askReplace(plan.ask)) applyOpt(r.opt);
+  };
+  el.loadOpt = loadOpt;
   const pickOpt = () => {
     const doc = el.ownerDocument;
     // בתוך הדפית ולא מנותק: Safari ישן לא פותח בחירת קובץ מ-input שאינו במסמך.
     el.querySelector('.opt-file')?.remove();
     const input = Object.assign(doc.createElement('input'), { type: 'file', accept: 'application/pdf,.pdf', className: 'opt-file', hidden: true });
     el.append(input);
-    input.addEventListener('change', async () => {
+    input.addEventListener('change', () => {
       const file = input.files[0];
       input.remove();
-      if (!file) return;
-      showOpt('קורא את קובץ ה-OPT…');
-      const r = await on.readOpt(file);
-      if (!r.ok) { showOpt(r.error, true); return; }
-      const plan = planOpt(r.opt, brief, manual);
-      if (!plan.ok) { showOpt(plan.error, true); return; }
-      optMsg.hidden = true;
-      if (!plan.ask || await askReplace(plan.ask)) applyOpt(r.opt);
+      if (file) loadOpt(file);
     });
     input.click();
   };

@@ -12,10 +12,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.rootViewController = AppViewController()
         window?.makeKeyAndVisible()
 
+        // PDF שהאפליקציה נפתחה ממנו, מתפריט "שתף" (requirements.md, 6.5).
+        IncomingFilePlugin.receive(connectionOptions.urlContexts.map { $0.url })
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        IncomingFilePlugin.receive(URLContexts.map { $0.url })
         SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)
     }
 

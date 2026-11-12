@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 41;
+const APP_VERSION = 42;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -407,6 +407,31 @@ async function fillFromCalendar(pending, { fromSheet = false } = {}) {
   setCalNote(...note, fromSheet);
 }
 
+/**
+ * PDF מתפריט "שתף" באפליקציית ה-iOS (requirements.md, 3.1, 6.5). קובץ OPT נטען לסעיף OPT בדפית, וכל קובץ
+ * אחר נטען כתדריך, בדיוק כמו בבחירת קובץ. בדפדפן, או בבנייה ישנה בלי התוסף: כלום.
+ */
+function wireIncoming() {
+  const C = globalThis.Capacitor;
+  if (!cal.isNativeApp() || !C.isPluginAvailable?.('IncomingFile')) return;
+  const take = async () => {
+    const r = await C.nativePromise('IncomingFile', 'take', {}).catch(() => null);
+    if (!r?.data) return;
+    const bytes = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
+    const file = new File([bytes], r.name || 'brief.pdf', { type: 'application/pdf' });
+    if ((await readOpt(file)).ok) {
+      if (!current) { goHome(); $('.drop-error').textContent = `${file.name}: קובץ OPT. בחר קודם תדריך.`; return; }
+      if (viewOf() !== 'sheet') openView('sheet', { replace: !!viewOf() });
+      sheetEl?.loadOpt?.(file);
+      return;
+    }
+    goHome();
+    loadFile(file, calToken());
+  };
+  addEventListener('incomingfile', take);
+  take();
+}
+
 function wireDrop() {
   const drop = $('#drop');
   const input = drop.querySelector('input');
@@ -498,6 +523,7 @@ async function start() {
   const saved = await loadCurrent();
   if (saved?.brief && saved.manual) current = { fileName: saved.fileName, bytes: saved.bytes, brief: saved.brief, manual: saved.manual };
   route();
+  wireIncoming();
 }
 
 start();
