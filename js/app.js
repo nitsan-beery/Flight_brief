@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 35;
+const APP_VERSION = 36;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -125,7 +125,9 @@ function route() {
 function renderHome() {
   const drop = $('#drop');
   drop.classList.toggle('loaded', !!current);
-  $('#float-box').hidden = !current;
+  // Cold weather לא תלויה בתדריך, ולכן התיבה מוצגת תמיד (requirements.md, 5.0, גרסה 36).
+  for (const b of document.querySelectorAll('#float-box [data-mode]')) b.hidden = !current && b.dataset.mode !== 'cold';
+  float.prepare();
   $('.xfer-copy').disabled = !current;
   renderCal();
   if (current) {
@@ -133,7 +135,6 @@ function renderHome() {
     $('.drop-name').textContent = current.bytes ? current.fileName : 'הועבר מהעתקה – אין קובץ PDF';
     $('.drop-name').dir = current.bytes ? 'ltr' : 'rtl';
     $('.drop-file').classList.toggle('nofile', !current.bytes);
-    float.prepare();
   }
 }
 

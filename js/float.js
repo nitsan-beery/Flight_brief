@@ -10,6 +10,7 @@
 
 import { MISSING, flapWarn } from './sheet.js';
 import { flightLabel, bfLow } from './brief.js';
+import { drawCold } from './cold.js';
 
 const FONT = '-apple-system, system-ui, "Segoe UI", Arial, sans-serif';
 const W = 600;
@@ -27,6 +28,8 @@ export function createFloat(o) {
   let mode = 'full';
 
   function draw() {
+    // לא תלויה בתדריך (cold.js). בלי תדריך מצוירת מראש, כדי שלווידאו יהיה פריים לפני הלחיצה.
+    if (mode === 'cold' || !o.getData()) { drawCold(canvas); return; }
     const d = o.getData();
     if (!d) return;
     (DRAW[mode] ?? drawFull)(canvas, d.brief, d.manual);
