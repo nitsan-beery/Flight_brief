@@ -4,6 +4,8 @@
 // בהרשאת קריאה בלבד, כמו באפליקציית הפיצויים (אותו Client ID). תיאור האירועים (שמות, טלפונים ומספרי
 // עובד) מפוענח בזיכרון: לדפית עוברים רק השמות, ובמכשיר נשמר רק מספר העובד של בעל היומן.
 // ספריית ההתחברות של גוגל נטענת רק כשמתחברים או קוראים, כך שמי שלא חיבר יומן אינו פונה לגוגל כלל.
+// באפליקציית ה-iOS (requirements.md, 6.5) ההתחברות עוברת דרך התוסף GoogleAuth (Swift), ואסימון גישה
+// חדש מתקבל בשקט, בלי חלון. הקריאה ליומן עצמה זהה.
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 const API = 'https://www.googleapis.com/calendar/v3/';
@@ -13,11 +15,16 @@ const SCOPES = [
 ];
 /** מזהה ההתחברות של אפליקציית הפיצויים. אינו סוד, ומורשה רק ל-nitsan-beery.github.io. */
 export const CLIENT_ID = '438961798736-7ctcj9og1mpao6uumnplvaamusutiroi.apps.googleusercontent.com';
+/** מזהה ההתחברות של אפליקציית ה-iOS (סוג iOS, באותו פרויקט). אינו סוד, ומורשה רק ל-Bundle ID שלה. */
+export const IOS_CLIENT_ID = '438961798736-1i84vmv5vemapf61d9sa7u66boq5oli5.apps.googleusercontent.com';
 const SLIP_MARK = 'Slip details';
 const TOKEN_KEY = 'calendar-token';
 const DAY = 864e5;
 
 // ---- התחברות ----
+
+/** האפליקציה רצה כאפליקציית iOS (Capacitor), ולא בדפדפן. */
+export const isNativeApp = () => globalThis.Capacitor?.isNativePlatform?.() === true;
 
 let gisPromise = null;
 
@@ -35,7 +42,7 @@ function loadGis() {
 }
 
 /** טעינת ספריית ההתחברות מראש, כדי שהחלון של גוגל ייפתח מיד בלחיצה. */
-export function preload() { loadGis().catch(() => { /* תדווח בקריאה */ }); }
+export function preload() { if (!isNativeApp()) loadGis().catch(() => { /* תדווח בקריאה */ }); }
 
 /** אסימון גישה שעוד בתוקף (שעה מההתחברות), לאותה לשונית בלבד. */
 export function cachedToken() {
@@ -56,8 +63,38 @@ function forgetToken() {
  * שנפתח אחרי המתנה). `hint`: חשבון הגוגל שכבר חובר, כדי שהחלון ייסגר לבד.
  */
 export function requestToken({ hint = null } = {}) {
+  if (isNativeApp()) return nativeToken(hint);
   if (!globalThis.google?.accounts?.oauth2) return loadGis().then(() => tokenNow(hint));
   return tokenNow(hint);
+}
+
+function saveToken(token, expiresIn) {
+  try { sessionStorage.setItem(TOKEN_KEY, JSON.stringify({ token, exp: Date.now() + Number(expiresIn ?? 3600) * 1000 })); } catch { /* בלי אחסון לשונית */ }
+}
+
+const googleAuth = (method, options) => globalThis.Capacitor.nativePromise('GoogleAuth', method, options);
+
+/** באפליקציה: קודם רענון שקט, ורק בלעדיו חלון ההתחברות של iOS. */
+async function nativeToken(hint) {
+  if (!IOS_CLIENT_ID) throw new Error('חיבור היומן באפליקציה עוד לא הוגדר.');
+  let r;
+  try {
+    try {
+      r = await googleAuth('refresh', { clientId: IOS_CLIENT_ID });
+    } catch (e) {
+      if (e?.code !== 'no_refresh') throw e;
+      r = await googleAuth('signIn', { clientId: IOS_CLIENT_ID, scopes: SCOPES.join(' '), hint });
+    }
+  } catch (e) {
+    throw new Error(e?.message || 'ההתחברות לגוגל נכשלה.');
+  }
+  const granted = String(r.scope ?? '').split(' ');
+  if (!SCOPES.every((sc) => granted.includes(sc))) {
+    await googleAuth('signOut', {}).catch(() => {});
+    throw new Error('לא ניתנה הרשאה לקרוא את היומן. סמן את שתי ההרשאות במסך של גוגל.');
+  }
+  saveToken(r.accessToken, r.expiresIn);
+  return r.accessToken;
 }
 
 function tokenNow(hint) {
@@ -71,7 +108,7 @@ function tokenNow(hint) {
       callback: (r) => {
         if (r.error) { reject(new Error(r.error === 'access_denied' ? 'לא ניתנה הרשאה לקרוא את היומן.' : `ההתחברות לגוגל נכשלה (${r.error}).`)); return; }
         if (!oauth2.hasGrantedAllScopes(r, ...SCOPES)) { reject(new Error('לא ניתנה הרשאה לקרוא את היומן. סמן את שתי ההרשאות במסך של גוגל.')); return; }
-        try { sessionStorage.setItem(TOKEN_KEY, JSON.stringify({ token: r.access_token, exp: Date.now() + Number(r.expires_in ?? 3600) * 1000 })); } catch { /* בלי אחסון לשונית */ }
+        saveToken(r.access_token, r.expires_in);
         resolve(r.access_token);
       },
       error_callback: (e) => reject(new Error(e?.type === 'popup_closed' ? 'החלון של גוגל נסגר לפני סיום ההתחברות.'
@@ -86,6 +123,7 @@ function tokenNow(hint) {
 export async function revoke() {
   const token = cachedToken();
   forgetToken();
+  if (isNativeApp()) { await googleAuth('signOut', {}).catch(() => {}); return; }
   if (!token) return;
   try {
     await fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `token=${encodeURIComponent(token)}` });

@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 38;
+const APP_VERSION = 39;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -290,7 +290,8 @@ function calToken() {
   if (!calSetting || calBusy) return null;
   const t = cal.cachedToken();
   if (t) return Promise.resolve(t);
-  if (navigator.userActivation && !navigator.userActivation.isActive) return null;
+  // באפליקציית ה-iOS ההרשאה מתחדשת בשקט, בלי חלון, ולכן גם בלי לחיצה (requirements.md, 6.5).
+  if (!cal.isNativeApp() && navigator.userActivation && !navigator.userActivation.isActive) return null;
   const p = cal.requestToken({ hint: calSetting.hint });
   p.catch(() => {}); // השגיאה מדווחת כשממתינים לה
   return p;
