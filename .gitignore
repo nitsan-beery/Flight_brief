@@ -11,3 +11,6 @@ samples
 .DS_Store
 Thumbs.db
 node_modules/
+
+# אפליקציית iOS: הקבצים מועתקים בזמן הבנייה (requirements.md 6.5)
+native/www/

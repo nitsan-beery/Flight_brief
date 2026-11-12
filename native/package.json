@@ -1,0 +1,16 @@
+{
+  "name": "flight-brief-ios",
+  "private": true,
+  "description": "עטיפת iOS (Capacitor) לאפליקציה. requirements.md, סעיף 6.5.",
+  "scripts": {
+    "web": "node scripts/copy-web.mjs",
+    "sync": "node scripts/copy-web.mjs && cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
+}

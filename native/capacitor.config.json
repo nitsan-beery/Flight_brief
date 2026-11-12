@@ -1,0 +1,8 @@
+{
+  "appId": "com.example.flightbrief",
+  "appName": "תדריך טיסה",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never"
+  }
+}
