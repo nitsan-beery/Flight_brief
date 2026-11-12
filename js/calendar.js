@@ -77,6 +77,8 @@ const googleAuth = (method, options) => globalThis.Capacitor.nativePromise('Goog
 /** באפליקציה: קודם רענון שקט, ורק בלעדיו חלון ההתחברות של iOS. */
 async function nativeToken(hint) {
   if (!IOS_CLIENT_ID) throw new Error('חיבור היומן באפליקציה עוד לא הוגדר.');
+  // תוסף שלא נרשם לא עונה בכלל, והקריאה הייתה נתקעת. עדיף הודעה.
+  if (!globalThis.Capacitor.isPluginAvailable?.('GoogleAuth')) throw new Error('חיבור היומן לא זמין בגרסה הזו של האפליקציה (GoogleAuth).');
   let r;
   try {
     try {
