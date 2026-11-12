@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 40;
+const APP_VERSION = 41;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -427,6 +427,7 @@ function wireDrop() {
 
 function registerServiceWorker() {
   $('#app-version').textContent = `גרסה ${APP_VERSION}`;
+  if (cal.isNativeApp()) { nativeUpdates(); return; }
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   navigator.serviceWorker.register('sw.js').then((registration) => {
     const check = () => { if (navigator.onLine) registration.update().catch(() => {}); };
@@ -436,6 +437,32 @@ function registerServiceWorker() {
   showUpdate();
   navigator.serviceWorker.addEventListener('controllerchange', showUpdate);
   $('#app-update').addEventListener('click', () => location.reload());
+}
+
+/**
+ * באפליקציית ה-iOS, במקום ה-Service Worker (requirements.md, 6.5): מדווחים שהאפליקציה עלתה, ובודקים ברקע
+ * אם יש גרסה חדשה. כשהיא הורדה ואומתה – אותו כפתור, והלחיצה עוברת אליה. בנייה ישנה בלי התוסף: כלום.
+ */
+function nativeUpdates() {
+  const C = globalThis.Capacitor;
+  if (!C.isPluginAvailable?.('WebUpdate')) return;
+  const call = (method, options = {}) => C.nativePromise('WebUpdate', method, options);
+  const button = $('#app-update');
+  let ready = 0;
+  call('ready', { version: APP_VERSION }).catch(() => {});
+  const check = () => {
+    if (!navigator.onLine) return;
+    call('check').then((r) => {
+      if (!(r?.ready > APP_VERSION)) return;
+      ready = r.ready;
+      button.textContent = `גרסה ${ready} מוכנה – לחץ לרענון`;
+      button.hidden = false;
+    }).catch(() => {});
+  };
+  check();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  setInterval(check, 60 * 60 * 1000);
+  button.addEventListener('click', () => { if (ready) call('apply', { version: ready }).catch(() => {}); });
 }
 
 /** גרסה חדשה שהותקנה בזמן שהדף פתוח: כפתור "גרסה N מוכנה – לחץ לרענון". */
