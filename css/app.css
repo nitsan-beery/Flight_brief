@@ -61,14 +61,34 @@ button svg,.back svg{width:18px;height:18px}
 .drop-error{font-size:14px;color:var(--bad);margin-top:6px}
 .drop-error:empty{display:none}
 
-/* כותרת מעל תיבה במסך הפתיחה */
-.list-title{font-size:14px;font-weight:400;color:var(--tx2);margin:20px 2px 8px}
-#float-box{margin-top:16px} /* בלי כותרת מגרסה 29 */
-.float-choices{display:flex;gap:8px;background:var(--sheet);border:1px solid var(--ln);border-radius:12px;padding:12px 14px}
-.float-choices button{flex:1;justify-content:center;padding:10px 6px}
-.float-choices button[hidden]{display:none}
-.float-choices button[aria-pressed="true"]{background:var(--ac);color:var(--sheet)}
-#float-box .float-msg{margin-top:8px}
+/* תוצרים: אריחים שפותחים מסך (requirements.md, 5.0, גרסה 37) */
+#products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;background:var(--sheet);border:1px solid var(--ln);border-radius:14px;padding:16px 8px;color:var(--tx);text-decoration:none}
+.tile:hover{border-color:var(--ac)}
+.tile svg{width:28px;height:28px;color:var(--ac);margin-bottom:6px}
+.tile-name{font-size:16px;font-weight:600}
+.tile-sub{font-size:13px;color:var(--tx2)}
+
+/* מתג בין התוצרים, בסרגל של מסך התוצר */
+.seg{display:inline-flex;border:1px solid var(--bx);border-radius:8px;overflow:hidden;flex:none}
+.seg a{font-size:14px;padding:6px 12px;color:var(--tx);text-decoration:none;white-space:nowrap}
+.seg a+a{border-right:1px solid var(--bx)}
+.seg a[aria-current="page"]{background:var(--ac);color:var(--sheet)}
+@media (max-width:560px){#product-view .bar{flex-wrap:wrap}.seg{order:3;width:100%}.seg a{flex:1;text-align:center}}
+
+/* פס החלון הצף, קבוע בתחתית כל המסכים (requirements.md, 5.0, גרסה 37) */
+body{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:0 max(16px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));pointer-events:none}
+#dock>*{max-width:640px;margin-left:auto;margin-right:auto;pointer-events:auto}
+#dock .float-msg{margin-bottom:8px}
+.dock-bar{display:flex;align-items:stretch;gap:6px;background:var(--sheet);border:1px solid var(--bx);border-radius:14px;padding:6px;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.dock-title{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--tx2);padding:0 8px;border-left:1px solid var(--ln);flex:none}
+.dock-title svg{width:18px;height:18px}
+.dock-bar button{flex:1;flex-direction:column;justify-content:center;gap:2px;border:none;background:none;padding:6px 4px;font-size:12px;color:var(--tx);border-radius:10px;min-width:0}
+.dock-bar button svg{width:22px;height:22px}
+.dock-bar button span{white-space:nowrap}
+.dock-bar button[aria-pressed="true"]{background:var(--ac);color:var(--sheet)}
+
 button:disabled{opacity:.4;cursor:default}
 .xfer-msg.ok .msg-text{color:var(--ok)}
 .xfer-msg.bad .msg-text{color:var(--bad)}
@@ -107,11 +127,13 @@ button:disabled{opacity:.4;cursor:default}
 .fs .add{font-size:13px;color:var(--ac);background:none;border:none;padding:0;direction:rtl;display:flex;margin-left:auto}
 .legend{margin-top:16px;font-size:12px;color:var(--tx2);direction:rtl}
 
-/* יומן (requirements.md, 3.3) */
-.cal-row{align-items:center;justify-content:space-between}
-.float-choices.cal-row button{flex:none;padding:8px 16px}
+/* יומן: שורה בתחתית כרטיס התדריך (requirements.md, 3.3, גרסה 37) */
+.cal-row{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--ln);margin-top:16px;padding-top:12px;cursor:default}
+.cal-row button{padding:6px 14px;font-size:14px}
 .cal-btns{display:flex;gap:8px;flex:none}
-.cal-status{display:flex;flex-direction:column;min-width:0;font-size:15px}
+.cal-status{display:flex;align-items:center;gap:8px;min-width:0;font-size:15px}
+.cal-status>svg{width:20px;height:20px;flex:none;color:var(--tx2)}
+.cal-text{display:flex;flex-direction:column;min-width:0}
 .cal-name{word-break:break-word}
 .cal-name.off{color:var(--tx2)}
 .cal-note{font-size:13px;color:var(--tx2)}

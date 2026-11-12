@@ -1,4 +1,4 @@
-// תדריך טיסה: מסך פתיחה ומסך דפית טיסה. requirements.md, סעיף 5.0.
+// תדריך טיסה: מסך פתיחה, מסכי תוצרים ופס החלון הצף. requirements.md, סעיף 5.0.
 // כל העיבוד במכשיר. קובץ התדריך לא יוצא ממנו.
 
 import { openPdf, extractPage } from './pdf/extract.js';
@@ -11,7 +11,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 36;
+const APP_VERSION = 37;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -56,7 +56,6 @@ const float = createFloat({
   getData: () => current && { brief: current.brief, manual: current.manual },
   getSheet: () => sheetEl,
   onState: (open, mode) => {
-    $('#float-btn span').textContent = open ? 'סגור חלון צף' : 'חלון צף';
     for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(open && b.dataset.mode === mode));
     if (open) hideFloatMsg();
     showSheetPlacement();
@@ -66,17 +65,19 @@ const float = createFloat({
 
 function hideFloatMsg() { for (const m of document.querySelectorAll('.float-msg')) m.hidden = true; }
 
-/** הודעה על חלון צף שלא נפתח, במסך שמוצג כרגע. */
+/** הודעה על חלון צף שלא נפתח, מעל הפס. */
 function showFloatMsg(text) {
   hideFloatMsg();
   if (!text) return;
-  const screen = $('#home').hidden ? $('#sheet-view') : $('#home');
-  const m = screen.querySelector('.float-msg');
+  const m = $('.float-msg');
   m.querySelector('.msg-text').textContent = text;
   m.hidden = false;
 }
 
-/** פותח דפית בחלון צף (requirements.md, 5.1.2). לחיצה על הדפית שכבר מוצגת סוגרת את החלון. */
+/**
+ * כפתור בפס החלון הצף: פותח את הדפית בחלון צף ונשאר במסך (requirements.md, 5.0, 5.1.2, גרסה 37).
+ * לחיצה על הדפית שכבר מוצגת סוגרת את החלון.
+ */
 async function openFloat(mode) {
   if (float.mode() === mode) { float.close(); return; }
   hideFloatMsg();
@@ -87,21 +88,14 @@ async function openFloat(mode) {
   return !msg;
 }
 
-/**
- * כפתורי החלון הצף במסך הפתיחה. "דפית טיסה" נפתחת בחלון הצף רק כשהוא כבר פתוח, ואחרת במסך הדפית
- * (requirements.md, 5.0, גרסה 29).
- */
-async function onModeButton(mode) {
-  if (mode === 'full' && !float.isOpen()) { hideFloatMsg(); openSheet(); return; }
-  await openFloat(mode);
-}
+const VIEWS = ['sheet', 'wx', 'notam'];
+const viewOf = () => VIEWS.find((v) => location.hash === `#${v}`) ?? null;
 
-function openSheet() { history.pushState({ fromHome: true }, '', '#sheet'); route(); }
-
-/** כפתור "חלון צף" במסך הדפית: פותח את הדפית המלאה וחוזר למסך הפתיחה (requirements.md, 5.0). */
-async function onFloatButton() {
-  if (float.isOpen()) { float.close(); return; }
-  if (await openFloat('full')) goHome();
+/** אריח במסך הפתיחה: מסך חדש בהיסטוריה. המתג במסך התוצר: מחליף מסך בלי להוסיף להיסטוריה. */
+function openView(view, { replace = false } = {}) {
+  if (replace) history.replaceState(history.state, '', `#${view}`);
+  else history.pushState({ fromHome: true }, '', `#${view}`);
+  route();
 }
 
 function goHome() {
@@ -112,22 +106,23 @@ function goHome() {
 // ---- מסכים ----
 
 function route() {
-  const wantSheet = location.hash === '#sheet' && current;
-  if (location.hash === '#sheet' && !current) history.replaceState(null, '', location.pathname);
-  if (!wantSheet) hideFloatMsg();
+  const view = current ? viewOf() : null;
+  if (location.hash && !view) history.replaceState(null, '', location.pathname);
+  hideFloatMsg();
   $('.cal-msg').hidden = true;
-  $('#home').hidden = !!wantSheet;
-  $('#sheet-view').hidden = !wantSheet;
-  if (wantSheet) renderSheetView(); else renderHome();
+  $('#home').hidden = !!view;
+  $('#product-view').hidden = !view;
+  // Cold weather לא תלויה בתדריך, ולכן מוצגת בפס גם לפני טעינת תדריך (requirements.md, 5.0, גרסה 36).
+  for (const b of document.querySelectorAll('.dock-bar [data-mode]')) b.hidden = !current && b.dataset.mode !== 'cold';
+  float.prepare();
+  if (view) renderProductView(view); else renderHome();
   window.scrollTo(0, 0);
 }
 
 function renderHome() {
   const drop = $('#drop');
   drop.classList.toggle('loaded', !!current);
-  // Cold weather לא תלויה בתדריך, ולכן התיבה מוצגת תמיד (requirements.md, 5.0, גרסה 36).
-  for (const b of document.querySelectorAll('#float-box [data-mode]')) b.hidden = !current && b.dataset.mode !== 'cold';
-  float.prepare();
+  $('#products').hidden = !current;
   $('.xfer-copy').disabled = !current;
   renderCal();
   if (current) {
@@ -171,11 +166,19 @@ async function readOpt(file) {
   }
 }
 
+/** מסך תוצר: המתג מסמן את התוצר, ורק החלק שלו מוצג (requirements.md, 5.0, גרסה 37). */
+function renderProductView(view) {
+  for (const a of document.querySelectorAll('.seg a')) {
+    if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  }
+  for (const p of document.querySelectorAll('.pane')) p.hidden = p.dataset.pane !== view;
+  if (view === 'sheet') renderSheetView();
+}
+
 function renderSheetView() {
   if (float.docOpen()) { showSheetPlacement(); return; }
   buildSheet();
   showSheetPlacement();
-  float.prepare();
 }
 
 function showSheetPlacement() {
@@ -393,7 +396,7 @@ async function fillFromCalendar(pending, { fromSheet = false } = {}) {
       current.manual = { ...current.manual, ck: r.ck, cab: r.cab };
       await saveCurrent(current).catch(() => {});
       float.update();
-      if (!$('#sheet-view').hidden && !float.docOpen()) buildSheet();
+      if (viewOf() === 'sheet' && !float.docOpen()) buildSheet();
     }
     note = r.ok ? [`הצוות של ${flightLabel(brief)} נלקח מהיומן.`, true] : [r.error, false];
   } catch (e) {
@@ -410,7 +413,7 @@ function wireDrop() {
   input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) loadFile(f, calToken()); });
   // כשהתדריך טעון, רק הכפתור פותח את בחירת הקובץ.
   drop.addEventListener('click', (e) => {
-    if (e.target.closest('.drop-xfer, .xfer-msg')) { e.preventDefault(); return; }
+    if (e.target.closest('.drop-xfer, .xfer-msg, .cal-row')) { e.preventDefault(); return; }
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
     if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
@@ -449,13 +452,14 @@ async function start() {
   paintThemeButtons();
   darkQuery.addEventListener('change', () => { paintThemeButtons(); float.update(); });
   for (const b of document.querySelectorAll('.theme-btn')) b.addEventListener('click', toggleTheme);
-  $('#float-btn').addEventListener('click', onFloatButton);
   for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', () => { b.closest('.msg').hidden = true; });
   for (const b of document.querySelectorAll('.xfer-copy')) b.addEventListener('click', copyData);
   $('.xfer-paste').addEventListener('click', pasteData);
   $('.cal-btn').addEventListener('click', onCalButton);
   $('.cal-sync').addEventListener('click', onCalSync);
-  for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => onModeButton(b.dataset.mode));
+  for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));
+  for (const a of document.querySelectorAll('.tile')) a.addEventListener('click', (e) => { e.preventDefault(); openView(a.hash.slice(1)); });
+  for (const a of document.querySelectorAll('.seg a')) a.addEventListener('click', (e) => { e.preventDefault(); openView(a.dataset.view, { replace: true }); });
   $('.back').addEventListener('click', (e) => { e.preventDefault(); goHome(); });
   addEventListener('popstate', route);
   addEventListener('hashchange', route);
