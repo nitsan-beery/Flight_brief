@@ -95,7 +95,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:start">${crewCell('קבינה', 'cab', manual.cab)}${crewCell('קוקפיט', 'ck', manual.ck)}</div>
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
-    <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מ-OPT</button></div>
+    <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מקובץ</button></div>
     <div class="grid opt">${inputCell('FLAPS', 'flap', manual.flap, 'numeric')}${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
     <div class="opt-msg" role="status" hidden></div>
     <div class="legend">כלי עזר בלבד</div>`;
@@ -150,7 +150,7 @@ export function renderSheet(slot, brief, manual, on) {
     on.onChange(manual);
     optMsg.hidden = true;
   };
-  /** קובץ OPT, מ"טען מ-OPT" או מתפריט "שתף" באפליקציית ה-iOS (6.5). */
+  /** קובץ OPT, מ"טען מקובץ" או מתפריט "שתף" באפליקציית ה-iOS (6.5). */
   const loadOpt = async (file) => {
     showOpt('קורא את קובץ ה-OPT…');
     const r = await on.readOpt(file);
