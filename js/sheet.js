@@ -137,7 +137,7 @@ export function renderSheet(slot, brief, manual, on) {
     dlg.className = warn ? 'dlg dlg-warn' : 'dlg';
     dlg.dir = 'rtl';
     dlg.innerHTML = warn
-      ? `<form method="dialog"><h2 class="dlg-title">אזהרה: הקובץ לא תואם לתדריך</h2><p class="dlg-q"></p>
+      ? `<form method="dialog"><h2 class="dlg-title">שים לב - OPT לא תואם לתדריך!</h2><p class="dlg-q"></p>
         ${vals ? '<p class="dlg-sub">ערכי ה-OPT יוחלפו:</p><div class="dlg-vals" dir="ltr"></div>' : ''}
         <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri">טען</button><button value="no" autofocus>בטל</button></div></form>`
       : `<form method="dialog"><h2 class="dlg-title">להחליף את ערכי ה-OPT?</h2>
