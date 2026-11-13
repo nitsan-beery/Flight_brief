@@ -187,8 +187,10 @@ test('NOTAM שמבטל מגבלה מוסתר; ביטול נוהל או מגבל�
     ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A2/27', ALWAYS, ['IAC LOC RWY 28: MISSED APCH GRADIENT RESTRICTION CANCELLED.', 'ILS RWY 28 DA CHANGED TO 520 FT.']],
     ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A3/27', ALWAYS, ['ILS OR LOC RWY 07 PROC WITHDRAWN.']],
     ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A4/27', ALWAYS, ['INTERSECTION TAKE OFF FROM A2 RWY 16 NO LONGER PERMITTED.']],
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A5/27', ALWAYS, ['AIP SUP 047/2027 EDDF - RUNWAY', '07C/25C RESURFACING WORKS 2027 - WORKS COMPLETED. SUP CANCELLED', 'WIE.']],
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A6/27', ALWAYS, ['AIP SUP 012/2027 CANCELLED. RWY 07C CLSD 0100-0400.']],
   ]);
-  assert.deepEqual(r.map((n) => n.reason), ['cancel', null, null, null]);
+  assert.deepEqual(r.map((n) => n.reason), ['cancel', null, null, null, 'cancel', null]);
 });
 
 test('כלל 2: מוטה ו-Code', () => {
