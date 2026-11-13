@@ -6,17 +6,16 @@ import { parseBrief, briefLabel, flightLabel, toLines } from './brief.js';
 import { parseOpt } from './opt.js';
 import { renderSheet, nextManual, keptLines } from './sheet.js';
 import { createFloat } from './float.js';
-import { encodeTransfer, decodeTransfer } from './transfer.js';
 import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from './store.js';
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 43;
+const APP_VERSION = 44;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
 
-/** {fileName, bytes, brief, manual} או null. אחרי הדבקה (3.2): fileName ו-bytes הם null. */
+/** {fileName, bytes, brief, manual} או null. תדריך שהודבק עד גרסה 43 (3.2): fileName ו-bytes הם null. */
 let current = null;
 let sheetEl = null;
 /** היומן המחובר (3.3): {calendars:[{id,name}], hint, owner} או null. */
@@ -123,7 +122,6 @@ function renderHome() {
   const drop = $('#drop');
   drop.classList.toggle('loaded', !!current);
   $('#products').hidden = !current;
-  $('.xfer-copy').disabled = !current;
   renderCal();
   if (current) {
     $('.drop-label').textContent = briefLabel(current.brief);
@@ -240,41 +238,6 @@ function askKeep(prevBrief, brief, keep) {
     dlg.addEventListener('close', () => resolve(dlg.returnValue !== 'reset'), { once: true });
     dlg.showModal();
   });
-}
-
-// ---- העברת נתונים בהעתקה והדבקה (requirements.md, 3.2) ----
-
-/** ההודעה במסך שמוצג: מסך הפתיחה או הדפית (שבה יש "העתק נתונים", גרסה 28). */
-function showXferMsg(text, ok) {
-  const m = document.querySelector('.screen:not([hidden]) .xfer-msg') ?? $('.xfer-msg');
-  m.querySelector('.msg-text').textContent = text;
-  m.classList.toggle('ok', ok);
-  m.classList.toggle('bad', !ok);
-  m.hidden = false;
-}
-
-async function copyData() {
-  if (!current) return;
-  try {
-    await navigator.clipboard.writeText(encodeTransfer(current.brief, current.manual));
-    showXferMsg('הנתונים הועתקו. ב-Safari לחץ "הדבק נתונים".', true);
-  } catch {
-    showXferMsg('לא ניתן להעתיק ללוח.', false);
-  }
-}
-
-/** ההדבקה מחליפה הכול: התדריך והנתונים הידניים, בלי שאלה (נקבע על ידי הבעלים). */
-async function pasteData() {
-  let text;
-  try { text = await navigator.clipboard.readText(); } catch { showXferMsg('לא ניתן לקרוא מהלוח.', false); return; }
-  const res = decodeTransfer(text);
-  if (!res.ok) { showXferMsg(res.error, false); return; }
-  if (float.isOpen()) float.close();
-  current = { fileName: null, bytes: null, brief: res.brief, manual: res.manual };
-  await saveCurrent(current).catch(() => {});
-  float.update();
-  renderHome();
-  showXferMsg('הנתונים הודבקו.', true);
 }
 
 // ---- שמות הצוות מיומן גוגל (requirements.md, 3.3) ----
@@ -439,7 +402,7 @@ function wireDrop() {
   input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) loadFile(f, calToken()); });
   // כשהתדריך טעון, רק הכפתור פותח את בחירת הקובץ.
   drop.addEventListener('click', (e) => {
-    if (e.target.closest('.drop-xfer, .xfer-msg, .cal-row')) { e.preventDefault(); return; }
+    if (e.target.closest('.cal-row')) { e.preventDefault(); return; }
     if (e.target.closest('.drop-pick')) { e.preventDefault(); input.click(); return; }
     if (e.target.closest('.drop-file')) { e.preventDefault(); openBriefFile(); return; }
     if (drop.classList.contains('loaded') && e.target !== input) e.preventDefault();
@@ -506,8 +469,6 @@ async function start() {
   darkQuery.addEventListener('change', () => { paintThemeButtons(); float.update(); });
   for (const b of document.querySelectorAll('.theme-btn')) b.addEventListener('click', toggleTheme);
   for (const b of document.querySelectorAll('.msg-close')) b.addEventListener('click', () => { b.closest('.msg').hidden = true; });
-  for (const b of document.querySelectorAll('.xfer-copy')) b.addEventListener('click', copyData);
-  $('.xfer-paste').addEventListener('click', pasteData);
   $('.cal-btn').addEventListener('click', onCalButton);
   $('.cal-sync').addEventListener('click', onCalSync);
   for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => openFloat(b.dataset.mode));

@@ -4,7 +4,7 @@
 // ובלי חיבור האפליקציה נפתחת מהעותק האחרון. בכל שינוי בקובץ שברשימה, או ברשימה עצמה, מעלים את CACHE
 // ואת APP_VERSION ב-js/app.js לאותו מספר. בלי זה האפליקציה המותקנת באייפד עלולה להמשיך להציג את הגרסה הקודמת.
 
-const CACHE = 'flight-brief-v43';
+const CACHE = 'flight-brief-v44';
 const SHELL = [
   './',
   'index.html',
@@ -17,7 +17,6 @@ const SHELL = [
   'js/float.js',
   'js/cold.js',
   'js/store.js',
-  'js/transfer.js',
   'js/opt.js',
   'js/pdf/extract.js',
   'vendor/pdfjs/pdf.mjs',

@@ -28,20 +28,11 @@ button svg,.back svg{width:18px;height:18px}
 .msg-close svg{width:16px;height:16px}
 
 /* כרטיס התדריך (requirements.md, 3.1) */
-.drop{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:16px;background:var(--sheet);border:1.5px dashed var(--bx);border-radius:14px;padding:18px 16px;cursor:pointer}
+.drop{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;column-gap:16px;background:var(--sheet);border:1.5px dashed var(--bx);border-radius:14px;padding:18px 16px;cursor:pointer}
 .drop:hover{border-color:var(--ac)}
 .drop.loaded{border-style:solid;border-color:var(--bx);cursor:default}
 .drop.busy{opacity:.6;pointer-events:none}
 .drop-main{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;min-width:0}
-/* העתק והדבק: עמודה בצד ימין, מופרדת בקו (requirements.md, 3.2) */
-.drop-xfer{display:flex;flex-direction:column;gap:8px;border-left:1px solid var(--ln);padding-left:16px;align-self:stretch;justify-content:center}
-.drop-xfer button{font-size:14px;width:130px;justify-content:center}
-.drop:not(.loaded) .xfer-copy{display:none}
-.drop .xfer-msg{grid-column:1/-1;margin:12px 0 0;text-align:right}
-@media (max-width:520px){
-  .drop{grid-template-columns:minmax(0,1fr)}
-  .drop-xfer{grid-row:2;flex-direction:row;justify-content:center;border-left:none;padding:12px 0 0;margin-top:12px;border-top:1px solid var(--ln)}
-}
 .drop-title{font-weight:600;font-size:17px}
 .drop-sub{color:var(--tx2);font-size:14px}
 .drop-state{margin-top:6px;font-size:14px;color:var(--tx2)}
@@ -89,9 +80,7 @@ body{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
 .dock-bar button[aria-pressed="true"]{background:var(--ac);color:var(--sheet)}
 
 button:disabled{opacity:.4;cursor:default}
-.xfer-msg.ok .msg-text{color:var(--ok)}
-.xfer-msg.bad .msg-text{color:var(--bad)}
-/* אחרי הדבקה אין קובץ PDF לפתוח (requirements.md, 3.2) */
+/* תדריך שהודבק עד גרסה 43: אין קובץ PDF לפתוח (requirements.md, 3.2) */
 .drop-file.nofile{cursor:default}
 .drop-file.nofile:hover{border-color:var(--bx)}
 .drop-file.nofile>svg.ext{display:none}
