@@ -320,7 +320,9 @@ function decide(n, ctx) {
   out.subjects = [...subj];
   const isDep = out.roles.includes('DEP');
   // ‏NOTAM של SID (בקטגוריית SID/STAR, או שמתחיל ב-SID) מזכיר בדרך כלל גם מסלול – עדיין SID בלבד.
-  const sidOnly = subj.has('sid') && !subj.has('star') && !subj.has('apch') && (n.cat === 'SID/STAR' || /^SID\b/.test(n.lines[0] || ''));
+  // ‏RNAV/RNP ב-SID הם מפרט הניווט שלו (RNAV 5), לא גישה. גישה רק לפי מילים חד-משמעיות.
+  const apchStrong = /\bIAP\b|\bIAC\b|\bAPCH\b|\bAPPROACH|\bILS\b|\bLOC\b|\bOCA|\bOCH\b|\bMDA\b|\bMINIMA\b|\bCIRCLING\b|\bMISSED\b/.test(text);
+  const sidOnly = subj.has('sid') && !subj.has('star') && !apchStrong && (n.cat === 'SID/STAR' || /^SID\b/.test(n.lines[0] || ''));
   if (sidOnly && !isDep) return hide('sid');
   const relevant = [...subj].filter((s) => s !== 'sid' || isDep);
   if (!relevant.length) return hide(subj.has('sid') ? 'sid' : 'subject');

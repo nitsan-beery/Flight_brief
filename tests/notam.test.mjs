@@ -144,12 +144,13 @@ test('נושאים: SID רק במוצא, נושא אחר מוסתר', () => {
   const r = run([
     ['DEPARTURE AIRPORT', 'LLBG', 'SID/STAR', '1A1/27', ALWAYS, ['ALL SID: MNM CMB GRADIENT 7.0 PERCENT']],
     ['DESTINATION AIRPORT', 'EDDF', 'SID/STAR', '1A2/27', ALWAYS, ['SID RWY 25C CHANGED']],
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A7/27', ALWAYS, ['SID RWY 16 - RNAV 5:', 'VEBIT 4S PDG CHANGED TO 5.3 PCT TO 2100FT.']],
     ['DESTINATION AIRPORT', 'EDDF', 'SID/STAR', '1A3/27', ALWAYS, ['STAR ROTEN 1A NOT AVBL']],
     ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', '1A4/27', ALWAYS, ['CONCENTRATION OF BIRDS IN VICINITY OF AD']],
     ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', '1A5/27', ALWAYS, ['STAND V155 CLSD']],
     ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', '1A6/27', ALWAYS, ['PAPI RWY 25C U/S']],
   ]);
-  assert.deepEqual(r.map((n) => n.reason), [null, 'sid', null, 'subject', null, null]);
+  assert.deepEqual(r.map((n) => n.reason), [null, 'sid', 'sid', null, 'subject', null, null]);
 });
 
 test('כלל 1: גישה לא מאושרת מוסתרת; מעורבת מוצגת עם עמעום', () => {
