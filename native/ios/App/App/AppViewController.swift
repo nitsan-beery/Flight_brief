@@ -14,5 +14,6 @@ class AppViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(GoogleAuthPlugin())
         bridge?.registerPluginInstance(WebUpdatePlugin())
         bridge?.registerPluginInstance(IncomingFilePlugin())
+        bridge?.registerPluginInstance(OpenFilePlugin())
     }
 }

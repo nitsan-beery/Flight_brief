@@ -12,7 +12,7 @@ import { analyzeBrief } from './notam.js';
 import { renderNotams } from './notam-view.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 51;
+const APP_VERSION = 52;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -138,6 +138,17 @@ let fileUrl = null;
 let fileUrlBytes = null;
 function openBriefFile() {
   if (!current?.bytes) return;
+  // באפליקציית ה-iOS window.open לא פותח דבר: הקובץ נפתח ב-Quick Look, דרך תוסף (requirements.md, 6.5, גרסה 52).
+  const C = globalThis.Capacitor;
+  if (C?.isPluginAvailable?.('OpenFile')) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = String(reader.result).split(',')[1];
+      C.nativePromise('OpenFile', 'open', { name: current.fileName ?? 'brief.pdf', data }).catch(() => {});
+    };
+    reader.readAsDataURL(new Blob([current.bytes], { type: 'application/pdf' }));
+    return;
+  }
   if (fileUrlBytes !== current.bytes) {
     if (fileUrl) URL.revokeObjectURL(fileUrl);
     fileUrl = URL.createObjectURL(new Blob([current.bytes], { type: 'application/pdf' }));
