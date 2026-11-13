@@ -10,7 +10,7 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 49;
+const APP_VERSION = 50;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
