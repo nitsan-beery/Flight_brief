@@ -153,3 +153,24 @@ button:disabled{opacity:.4;cursor:default}
 #pip-canvas{position:fixed;left:-10000px;top:0}
 /* גודל אמיתי, שקוף ומאחורי התוכן: Safari עוצר וידאו זעיר או מוסתר (requirements.md, 5.1.2). */
 #pip-video{position:fixed;left:0;bottom:0;width:96px;height:72px;opacity:.01;pointer-events:none;z-index:-1}
+
+/* סיכום NOTAM (requirements.md, 5.3). טקסט ה-NOTAM כמו שהוא, משמאל לימין, ברוחב קבוע. */
+.nt-sum{font-size:13px;color:var(--tx2);margin:0 2px 12px}
+.nt-card{background:var(--sheet);border:1px solid var(--ln);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.nt-hd{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 14px;border-bottom:1px solid var(--ln)}
+.nt-icao{font-size:18px;font-weight:600}
+.nt-chip{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--card);color:var(--ac);border:1px solid var(--ln)}
+.nt-win{font-size:13px;color:var(--tx2);margin-inline-start:auto;font-variant-numeric:tabular-nums}
+.nt-grp{font-size:12px;color:var(--tx2);padding:10px 14px 0}
+.nt{padding:6px 14px 10px;border-bottom:1px solid var(--ln)}
+.nt-card>.nt:last-of-type{border-bottom:none}
+.nt-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.nt-tmp{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--warn-bg);color:var(--warn)}
+.nt-why{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--card);color:var(--tx2)}
+.nt-tx{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin-top:3px;text-align:left}
+.nt-tx mark{background:var(--warn-bg);color:inherit;border-radius:3px;padding:0 2px;outline:1px solid var(--warn)}
+.nt-empty{font-size:14px;color:var(--tx2);padding:10px 14px;margin:0}
+.nt-hidden{border-top:1px solid var(--ln);font-size:13px;color:var(--tx2)}
+.nt-hidden summary{padding:8px 14px;cursor:pointer;color:var(--ac)}
+.nt-hidden .nt{opacity:.75}
+.nt-warn{color:var(--warn)}

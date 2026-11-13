@@ -3,7 +3,7 @@
 //
 // קוד טהור, בלי PDF.js: מקבל שורות טקסט (מ-toLines ב-brief.js) ומחזיר NOTAM עם החלטה לכל אחד.
 // אין ניחוש שקט: כשאי אפשר לקבוע שה-NOTAM לא חל – הוא מוצג. כל הסתרה נושאת סיבה.
-// בשלב זה משמש את tools/check-notams.mjs בלבד. ייכנס ל-SHELL ב-sw.js כשהתצוגה תתחבר.
+// משמש את מסך ה-NOTAM (notam-view.js) ואת tools/check-notams.mjs.
 
 // ---------- נתוני הצי (5.3.1) ----------
 
@@ -345,6 +345,8 @@ function decide(n, ctx) {
     const hit = windows.filter((w) => overlaps(n.valid, w));
     if (!hit.length) return hide('time');
     const sched = parseSchedule(n.lines[0]);
+    // "זמני": מתחיל או נגמר בתוך החלון, או לפי לוח זמנים – משתנה במהלך הטיסה (5.3, תצוגה).
+    out.temporary = !!sched || hit.some((w) => n.valid.from > w.from || (n.valid.to != null && n.valid.to < w.to));
     if (sched) {
       const clipped = hit.map((w) => ({ from: Math.max(w.from, n.valid.from), to: Math.min(w.to, n.valid.to ?? Infinity) }));
       if (!clipped.some((w) => scheduleHits(sched, w))) return hide('schedule');
@@ -413,6 +415,71 @@ function decide(n, ctx) {
   if (kg.length && ctx.mtowKg && kg.every((v) => v > ctx.mtowKg)) return hide('mtow');
 
   return out;
+}
+
+// ---------- תצוגה (5.3, אושר כבסיס בהדמיה) ----------
+
+/** סדר הכרטיסים לפי התפקיד הראשון של השדה. */
+const ROLE_ORDER = ['DEP', 'DEST', 'ALTN', 'ERA', 'TO_ALTN', 'EDTO'];
+/** סדר הקבוצות בתוך כרטיס. */
+export const GROUPS = ['ad', 'rwy', 'apch', 'proc', 'taxi', 'rffs', 'other'];
+export const GROUP_LABEL = { ad: 'סגירה ושעות', rwy: 'מסלולים', apch: 'גישה, מינימות ותאורה', proc: 'SID ו-STAR', taxi: 'הסעה וחניה', rffs: 'RFFS', other: 'אחר' };
+
+const AD_STRONG = /\bAD(?: [A-Z]{4})? (?:CLSD|CLOSED|NOT AVBL)\b|\bAERODROME (?:CLSD|CLOSED)\b|\bAD (?:HR|HOURS|OPR|OPS)\b|\bOPR HR|OPERATING HOURS|HOURS OF (?:OPERATION|SERVICE)|CLSD TO ALL|NOT (?:TO BE )?PLANNED AS (?:ALTN|ALTERNATE)/;
+const APCH_WORDS = /\bIAP\b|\bIAC\b|\bAPCH\b|\bAPPROACH|\bMINIMA\b|\bMINIMUMS?\b|\bOCA|\bOCH\b|\bMDA\b|\bD[AH]\b|\bILS\b|\bLOC\b|\bGP\b|GLIDE|\bPAPI\b|\bALSF?\b|\bCIRCLING\b|\bMISSED\b|\bRNP\b|\bLNAV|\bLGT|\bLIGHT/;
+
+/** הקבוצה של NOTAM מוצג: נושא אחד, הראשון לפי הסדר. */
+export function groupOf(n) {
+  const text = n.lines.join(' ');
+  const first = n.lines[0] || '';
+  const s = new Set(n.subjects);
+  // ‏PPR לבד (למשל "FOR LOWER MINIMA PPR FOCA") אינו סגירה: רק ניסוח חד-משמעי.
+  if (AD_STRONG.test(text)) return 'ad';
+  if ((s.has('sid') || s.has('star')) && (n.cat === 'SID/STAR' || /^(?:SID|STAR)\b/.test(first))) return 'proc';
+  // ‏NOTAM שפותח במסלול הסעה או בחניה שייך להסעה, גם כשהוא מזכיר תאורה (AREA MARKED AND LGTD).
+  if (/^(?:TWYS?|TAXIWAY|TXL|APN|APRON|(?:ACFT )?STANDS?|AFTER LDG)\b/.test(first)) return 'taxi';
+  if (APCH_WORDS.test(text)) return 'apch';
+  if ((s.has('twy') || s.has('stand')) && !/^RWYS?\b/.test(first)) return 'taxi';
+  if (s.has('rwy')) return 'rwy';
+  if (s.has('sid') || s.has('star')) return 'proc';
+  if (s.has('ad')) return 'ad';
+  if (s.has('rffs')) return 'rffs';
+  return 'other';
+}
+
+const two = (x) => String(x).padStart(2, '0');
+const dd = (t) => { const d = new Date(t); return `${two(d.getUTCDate())}/${two(d.getUTCMonth() + 1)}`; };
+const hhmm = (t) => { const d = new Date(t); return `${two(d.getUTCHours())}${two(d.getUTCMinutes())}`; };
+export const hhColon = (t) => { const d = new Date(t); return `${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`; };
+
+/** התוקף בקיצור: "10/11 0800–1100", ‏"09/11 0830 – 27/11 2259", ‏"PERM". */
+export function validLabel(v) {
+  if (v.unknown) return v.raw;
+  if (v.open === 'PERM' || v.open === 'UFN') return `${dd(v.from)} ${hhmm(v.from)} – ${v.open}`;
+  const to = v.to ?? v.estTo;
+  const est = v.open === 'EST' ? ' EST' : '';
+  if (dd(v.from) === dd(to)) return `${dd(v.from)} ${hhmm(v.from)}–${hhmm(to)}${est}`;
+  return `${dd(v.from)} ${hhmm(v.from)} – ${dd(to)} ${hhmm(to)}${est}`;
+}
+
+/**
+ * כל הניתוח לתדריך אחד: שורות כל העמודים (מ-toLines) ופרטי עמוד 1 → כרטיס לכל שדה רלוונטי.
+ * @returns {{ok:false, error:string} | {ok:true, ctx, total:number, shown:number, cards:Card[]}}
+ * Card = {icao, roles:[{role, window}], shown:Notam[], hidden:Notam[]}
+ */
+export function analyzeBrief(pages, brief) {
+  const bul = parseBulletin(pages.flat());
+  if (!bul.ok) return bul;
+  const start = pages.findIndex((ls) => ls.some((l) => /LIDO-NOTAM-BULLETIN INCLUDES/.test(l)));
+  const ctx = flightContext(pages[0], pages.slice(0, start).flat(), brief);
+  if (!ctx.ok) return ctx;
+  const all = filterNotams(bul.notams, ctx);
+  const first = (ap) => Math.min(...ap.roles.map((r) => ROLE_ORDER.indexOf(r.role)));
+  const cards = [...ctx.airports.values()].sort((a, b) => first(a) - first(b)).map((ap) => {
+    const here = all.filter((n) => n.place === ap.icao);
+    return { icao: ap.icao, roles: ap.roles, shown: here.filter((n) => n.shown), hidden: here.filter((n) => !n.shown) };
+  });
+  return { ok: true, ctx, total: all.length, shown: all.filter((n) => n.shown).length, cards };
 }
 
 export const REASON_LABEL = {

@@ -8,9 +8,11 @@ import { renderSheet, nextManual, keptLines } from './sheet.js';
 import { createFloat } from './float.js';
 import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from './store.js';
 import * as cal from './calendar.js';
+import { analyzeBrief } from './notam.js';
+import { renderNotams } from './notam-view.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 50;
+const APP_VERSION = 51;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -171,6 +173,41 @@ function renderProductView(view) {
   }
   for (const p of document.querySelectorAll('.pane')) p.hidden = p.dataset.pane !== view;
   if (view === 'sheet') renderSheetView();
+  if (view === 'notam') renderNotamView();
+}
+
+// ---- סיכום NOTAM (requirements.md, 5.3) ----
+
+/** הניתוח של התדריך הפתוח. מחושב מקובץ ה-PDF בכניסה הראשונה למסך, ונשמר בזיכרון עד שנטען תדריך אחר. */
+let notamCache = { bytes: null, res: null, busy: null };
+
+async function analyzeNotams() {
+  const doc = await openPdf(current.bytes);
+  try {
+    const pages = [];
+    for (let p = 1; p <= doc.numPages; p++) pages.push(toLines((await extractPage(doc, p)).items).map((l) => l.text));
+    const b = current.brief;
+    return analyzeBrief(pages, { org: b.org, dst: b.dst, reg: b.reg, type: b.fields.type.value });
+  } finally {
+    await doc.destroy();
+  }
+}
+
+async function renderNotamView() {
+  const slot = $('#notam-slot');
+  if (!current.bytes) { slot.replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: 'התדריך הועבר מהעתקה, בלי קובץ PDF, ולכן אין ממנו NOTAM. טען את קובץ התדריך.' })); return; }
+  const bytes = current.bytes;
+  if (notamCache.bytes !== bytes) {
+    notamCache = { bytes, res: null, busy: analyzeNotams().catch(() => ({ ok: false, error: 'לא ניתן לקרוא את ה-NOTAM מקובץ התדריך.' })) };
+  }
+  if (!notamCache.res) {
+    slot.replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: 'קורא את ה-NOTAM מהתדריך…' }));
+    const res = await notamCache.busy;
+    if (notamCache.bytes !== bytes) return;
+    notamCache.res = res;
+    if (viewOf() !== 'notam') return;
+  }
+  renderNotams(slot, notamCache.res);
 }
 
 function renderSheetView() {
