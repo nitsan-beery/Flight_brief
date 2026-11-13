@@ -19,7 +19,7 @@ const dir = args.find((a) => !a.startsWith('--')) ?? join(process.env.OneDrive ?
 
 const hhmm = (t) => new Date(t).toISOString().slice(11, 16);
 const win = (w) => (w ? `${hhmm(w.from)}–${hhmm(w.to)}` : 'לא ידוע');
-const FILTER_REASONS = ['approach', 'size', 'apch-cat', 'rffs', 'mtow'];
+const FILTER_REASONS = ['approach', 'size', 'apch-cat', 'rffs', 'mtow', 'cancel'];
 
 const files = (await readdir(dir)).filter((f) => f.toLowerCase().endsWith('.pdf')).sort();
 const total = {};

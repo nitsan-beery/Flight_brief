@@ -305,6 +305,15 @@ export function segmentsOf(lines) {
   return segs;
 }
 
+const CANCEL = /\b(?:RESTRICTIONS?|LIMITATIONS?|GRADIENTS?|PROHIBITIONS?|REQUIREMENTS?)\b.*\b(?:CANCELL?ED|CNL|CNLD|LIFTED|WITHDRAWN|REMOVED|RESCINDED|NO LONGER)\b/;
+const EMPTY_SEG = /^(?:ALL OTHER\b.*\bUNCHANGED\.?|REF\b.*|AIP\b.*)$/;
+
+/** האם כל הקטעים בעלי התוכן הם ביטול מגבלה (5.3). */
+function cancelsOnly(segments) {
+  const real = segments.filter((s) => !s.omit && s.flat && !EMPTY_SEG.test(s.flat));
+  return real.length > 0 && real.every((s) => CANCEL.test(s.flat));
+}
+
 /** הטקסט להצגה: בלי הקטעים המושמטים. */
 export const displayText = (n) => n.segments.filter((s) => !s.omit).map((s) => s.text).join('').trim();
 
@@ -352,7 +361,7 @@ function decide(n, ctx) {
   if (!relevant.length) return hide(subj.has('sid') ? 'sid' : 'subject');
 
   const f = ctx.fleet;
-  if (!f) return out;
+  if (!f) return cancelsOnly(out.segments) ? hide('cancel') : out;
 
   // RFFS: רק כשהקטגוריה בשדה יורדת מתחת לזו של המטוס. NOTAM שכל עניינו RFFS ובלי מספר – מוצג.
   if (subj.has('rffs') && relevant.length === 1) {
@@ -370,6 +379,9 @@ function decide(n, ctx) {
     const restSubj = [...subjectsOf({ cat: '' }, rest)].filter((s) => s !== 'apch' && (s !== 'sid' || isDep));
     if (!APCH_GOOD.test(rest) && !restSubj.length) return hide('approach');
   }
+
+  // ‏NOTAM שמבטל מגבלה (5.3).
+  if (cancelsOnly(out.segments)) return hide('cancel');
 
   // כלל 2: מוטה ו-Code.
   if (sizeRule(text, f)) return hide('size');
@@ -410,6 +422,7 @@ export const REASON_LABEL = {
   size: 'מוטה / Code של מטוסים אחרים',
   'apch-cat': 'קטגוריית גישה אחרת',
   mtow: 'MTOW מעל המטוס',
+  cancel: 'ביטול מגבלה',
 };
 
 export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'Dest ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
