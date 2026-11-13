@@ -3,7 +3,7 @@
 // התדריכים לא נכנסים לריפו (CLAUDE.md). ברירת המחדל היא תיקיית הדוגמאות ב-OneDrive.
 //
 // הרצה:  node tools/check-notams.mjs [תיקייה] [--shown] [--hidden] [--only=LY347]
-//   --shown   רשימת ה-NOTAM המוצגים (מזהה ושורה ראשונה, ‏~ לשורה מעומעמת, * לשורה מובלטת)
+//   --shown   ה-NOTAM המוצגים במלואם. [✂ ...] קטע מושמט (גישה לא מאושרת), «...» טקסט מובלט
 //   --hidden  רשימת ה-NOTAM שהוסתרו בשדות רלוונטיים, עם הסיבה
 
 import { readdir, readFile } from 'node:fs/promises';
@@ -62,7 +62,13 @@ for (const f of files) {
     if (Object.keys(reasons).length) console.log(`      מוסתרים ${here.length - here.filter((x) => x.shown).length}: ${Object.entries(reasons).map(([k, v]) => `${REASON_LABEL[k]} ${v}`).join(', ')}`);
     if (flag('--shown')) for (const n of here.filter((x) => x.shown)) {
       console.log(`        ✓ ${n.id}  ${n.valid.raw}`);
-      n.lines.forEach((l, i) => console.log(`            ${n.dim.includes(i) ? '~' : n.highlight.includes(i) ? '*' : ' '} ${l}`));
+      const body = n.segments.map((s) => {
+        if (s.omit) return `[✂ ${s.flat}]${/\n/.test(s.text) ? '\n' : ' '}`;
+        let t = s.text;
+        for (const [a, b] of [...s.marks].sort((x, y) => y[0] - x[0])) t = `${t.slice(0, a)}«${t.slice(a, b)}»${t.slice(b)}`;
+        return t;
+      }).join('');
+      for (const l of body.split('\n')) if (l.trim()) console.log(`              ${l.trim()}`);
     }
     if (flag('--hidden')) for (const n of here.filter((x) => !x.shown && (flag('--all-reasons') || FILTER_REASONS.includes(x.reason) || x.reason === 'subject' || x.reason === 'sid'))) {
       console.log(`        ✗ ${n.id} [${REASON_LABEL[n.reason]}] ${n.lines.slice(0, 3).join(' / ').slice(0, 160)}`);

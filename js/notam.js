@@ -285,8 +285,32 @@ function apchCats(text) {
 const RFFS_CAT = /\bCAT(?:EGORY)? ?(\d{1,2})\b/g;
 
 /**
+ * חלוקת הטקסט לקטעים (משפטים). requirements.md 5.3.2, כלל 1.
+ * גבול: אחרי נקודה שאחריה רווח או סוף שורה (לא נקודה עשרונית), ולפני שורה שמתחילה ב-"-", "1." או "a)".
+ * חיבור ה-text של כל הקטעים מחזיר בדיוק את הטקסט המקורי (השורות מחוברות ב-\n).
+ * @returns {{text:string, flat:string, omit:boolean, marks:[number,number][]}[]}
+ */
+export function segmentsOf(lines) {
+  const text = lines.join('\n');
+  const segs = [];
+  let start = 0;
+  const push = (end) => {
+    if (end <= start) return;
+    const t = text.slice(start, end);
+    segs.push({ text: t, flat: t.replace(/\s+/g, ' ').trim(), omit: false, marks: [] });
+    start = end;
+  };
+  for (const m of text.matchAll(/\.(?=\s)|\n(?=(?:-|\d+\.|[a-z]\))\s)/g)) push(m[0] === '.' ? m.index + 1 : m.index);
+  push(text.length);
+  return segs;
+}
+
+/** הטקסט להצגה: בלי הקטעים המושמטים. */
+export const displayText = (n) => n.segments.filter((s) => !s.omit).map((s) => s.text).join('').trim();
+
+/**
  * ההחלטה לכל NOTAM.
- * @returns Notam עם shown, reason (כשמוסתר), subjects, roles, dim (אינדקסי שורות), highlight (אינדקסי שורות)
+ * @returns Notam עם shown, reason (כשמוסתר), subjects, roles, segments (קטעים, עם omit ו-marks להבלטה)
  */
 export function filterNotams(notams, ctx) {
   return notams.map((n) => decide(n, ctx));
@@ -295,7 +319,7 @@ export function filterNotams(notams, ctx) {
 function decide(n, ctx) {
   // שורות נשברות באמצע ביטוי (ICAO / CODE C), ולכן ההתאמה על הטקסט המחובר ברווח.
   const text = n.lines.join(' ');
-  const out = { ...n, shown: true, reason: null, subjects: [], roles: [], dim: [], highlight: [] };
+  const out = { ...n, shown: true, reason: null, subjects: [], roles: [], segments: segmentsOf(n.lines) };
   const hide = (reason) => ({ ...out, shown: false, reason });
   if (n.kind === 'fir') return hide('fir');
   if (n.cat === 'COMPANY NOTAM' || /^CO\d+\/\d{2}$/.test(n.id)) return hide('company');
@@ -336,28 +360,31 @@ function decide(n, ctx) {
     if (cats.length && cats.every((c) => c >= f.rffs)) return hide('rffs');
   }
 
-  // כלל 1: סוג גישה לא מאושר.
-  const lines = n.lines;
-  if (APCH_BAD.test(text)) {
-    if (!APCH_GOOD.test(text)) return hide('approach');
-    lines.forEach((l, i) => { if (APCH_BAD.test(l) && !APCH_GOOD.test(l)) out.dim.push(i); });
-  }
-  // ‏737 בארה"ב: בלי CAT II/III.
-  if (/^737/.test(f.key) && /^K/.test(n.place)) {
-    lines.forEach((l, i) => { if (/\bCAT ?(?:II|III|IIIA|IIIB)\b/.test(l) && !out.dim.includes(i)) out.dim.push(i); });
+  // כלל 1: סוג גישה לא מאושר. קטע (משפט) על גישה לא מאושרת מושמט; אם לא נשאר כלום רלוונטי – מוסתר.
+  if (APCH_BAD.test(text) && !APCH_GOOD.test(text)) return hide('approach');
+  const usNoCat2 = /^737/.test(f.key) && /^K/.test(n.place);
+  const unapproved = (s) => (APCH_BAD.test(s) && !APCH_GOOD.test(s)) || (usNoCat2 && /\bCAT ?(?:II|III|IIIA|IIIB)\b/.test(s) && !/\bCAT I\b/.test(s));
+  for (const seg of out.segments) if (unapproved(seg.flat)) seg.omit = true;
+  if (out.segments.some((s) => s.omit)) {
+    const rest = out.segments.filter((s) => !s.omit).map((s) => s.flat).join(' ');
+    const restSubj = [...subjectsOf({ cat: '' }, rest)].filter((s) => s !== 'apch' && (s !== 'sid' || isDep));
+    if (!APCH_GOOD.test(rest) && !restSubj.length) return hide('approach');
   }
 
   // כלל 2: מוטה ו-Code.
   if (sizeRule(text, f)) return hide('size');
 
-  // כלל 3: קטגוריית גישה.
+  // כלל 3: קטגוריית גישה. הבלטה של הערך של המטוס, עד הפסיק או סוף השורה.
   if (subj.has('apch')) {
     const exc = APCH_CAT_EXCEPTIONS.find((e) => e.icao === n.place && e.regs.includes(ctx.reg));
     const mine = exc ? exc.apchCat : f.apchCat;
     const { cats, all } = apchCats(text);
     if (cats.size && !all && !cats.has(mine)) return hide('apch-cat');
-    const own = new RegExp(`\\bCAT(?:EGORY|S)? ?(?:[A-E][/, -]+)*${mine}\\b|\\bCAT ${mine}\\b|\\b${mine}-DL\\b`);
-    lines.forEach((l, i) => { if (own.test(l)) out.highlight.push(i); });
+    const own = new RegExp(`\\bCAT(?:EGORY|S)? ?(?:[A-E](?:/| ?, ?| AND | ?- ?))*${mine}(?:(?:/| ?- ?| AND )DL)?\\b[^,\\n]*(?:\\n\\d[^,\\n]*)?`, 'g');
+    for (const seg of out.segments) {
+      if (seg.omit) continue;
+      for (const m of seg.text.matchAll(own)) seg.marks.push([m.index, m.index + m[0].replace(/[\s.]+$/, '').length]);
+    }
   }
 
   // כלל 5: MTOW.

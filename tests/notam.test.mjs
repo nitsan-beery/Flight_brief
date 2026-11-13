@@ -1,7 +1,7 @@
 // בדיקות לסינון NOTAM, על נתונים סינתטיים בלבד (CLAUDE.md: אסור תדריך אמיתי בריפו).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor } from '../js/notam.js';
+import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText } from '../js/notam.js';
 
 const T = (s) => Date.UTC(2000 + +s.slice(0, 2), +s.slice(2, 4) - 1, +s.slice(4, 6), +s.slice(6, 8), +s.slice(8, 10));
 
@@ -153,14 +153,32 @@ test('נושאים: SID רק במוצא, נושא אחר מוסתר', () => {
   assert.deepEqual(r.map((n) => n.reason), [null, 'sid', 'sid', null, 'subject', null, null]);
 });
 
-test('כלל 1: גישה לא מאושרת מוסתרת; מעורבת מוצגת עם עמעום', () => {
+test('קטעים: לפי משפטים, והחיבור מחזיר את הטקסט המקורי', () => {
+  const lines = ['IAP X RWY 9, AMDT 2... LPV DA 319 ALL CATS. LNAV MDA 540', 'ALL CATS. NOTE: 1.5NM', '- ITEM ONE', '- ITEM TWO'];
+  const s = segmentsOf(lines);
+  assert.equal(s.map((x) => x.text).join(''), lines.join('\n'));
+  assert.deepEqual(s.map((x) => x.flat), ['IAP X RWY 9, AMDT 2...', 'LPV DA 319 ALL CATS.', 'LNAV MDA 540 ALL CATS.', 'NOTE: 1.5NM', '- ITEM ONE', '- ITEM TWO']);
+});
+
+test('כלל 1: גישה לא מאושרת מוסתרת; במעורבת הקטעים שלה מושמטים', () => {
   const r = run([
     ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A1/27', ALWAYS, ['IAC RNP RWY 25C: LPV OCA/H CHANGED', 'CAT D: 500FT']],
     ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A2/27', ALWAYS, ['RNP Z RWY 07 (AR) NOT AVAILABLE']],
-    ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A3/27', ALWAYS, ['IAP RNP RWY 07 LNAV/VNAV INCREASED OCA CAT D 480FT', 'IAP RNP RWY 07 LPV INCREASED OCA CAT D 480FT']],
+    ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A3/27', ALWAYS, ['IAP RNP RWY07L LNAV/VNAV INCREASED OCA CAT A: 456FT, CAT', 'D: 485FT.', 'IAP RNP RWY07L LPV INCREASED OCA CAT A: 456FT, CAT', 'D:', '485FT']],
+    ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A4/27', ALWAYS, ['IAP RNAV (GPS) RWY 9... LPV DA 319/HAT 311 ALL CATS. LNAV MDA 540/HAT 532 ALL CATS.']],
   ]);
-  assert.deepEqual(r.map((n) => n.reason), ['approach', 'approach', null]);
-  assert.deepEqual(r[2].dim, [1]);
+  assert.deepEqual(r.map((n) => n.reason), ['approach', 'approach', null, null]);
+  assert.equal(displayText(r[2]), 'IAP RNP RWY07L LNAV/VNAV INCREASED OCA CAT A: 456FT, CAT\nD: 485FT.');
+  assert.equal(displayText(r[3]), 'IAP RNAV (GPS) RWY 9... LNAV MDA 540/HAT 532 ALL CATS.');
+});
+
+test('כלל 1: ‏737 בארה"ב – קטעי CAT II/III מושמטים', () => {
+  const p = PAGE1.map((l) => l.replace(/EDDF/g, 'KJFK'));
+  const c = flightContext(p, [], { ...BRIEF, dst: 'KJFK' });
+  const e = [['DESTINATION AIRPORT', 'KJFK', 'APPROACH PROCEDURE', '1A1/27', ALWAYS, ['ILS RWY 4R CAT I DA 213. ILS RWY 4R CAT II DH 100.']]];
+  assert.equal(displayText(run(e, c)[0]), 'ILS RWY 4R CAT I DA 213.');
+  const eu = [['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A1/27', ALWAYS, ['ILS RWY 25C CAT I DA 500. ILS RWY 25C CAT II DH 100.']]];
+  assert.equal(displayText(run(eu)[0]), 'ILS RWY 25C CAT I DA 500. ILS RWY 25C CAT II DH 100.');
 });
 
 test('כלל 2: מוטה ו-Code', () => {
@@ -185,7 +203,10 @@ test('כלל 3: קטגוריית גישה – הבלטה, והסתרה רק כש
     ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A3/27', ALWAYS, ['ILS RWY 25C DA 382 ALL CATS']],
   ]);
   assert.deepEqual(r.map((n) => n.reason), ['apch-cat', null, null]);
-  assert.deepEqual(r[1].highlight, [2]);
+  const marked = (n) => n.segments.flatMap((s) => s.marks.map(([a, b]) => s.text.slice(a, b)));
+  assert.deepEqual(marked(r[1]), ['CAT D-DL 1010']);
+  const r2 = run([['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A4/27', ALWAYS, ['NEW OCH: CAT A 67, CAT C 87, CAT D 103, CAT DL 108', 'CAT A/B/C/D 1602 (200), CAT D', '102.']]]);
+  assert.deepEqual(marked(r2[0]), ['CAT D 103', 'CAT A/B/C/D 1602 (200)', 'CAT D\n102']);
 });
 
 test('חריג LFLB: ‏4X-EKH הוא CAT C שם', () => {
