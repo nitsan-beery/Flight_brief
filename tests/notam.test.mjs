@@ -213,7 +213,7 @@ test('כלל 2: מוטה ו-Code', () => {
     ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', '1A5/27', ALWAYS, ['AD NOT TO BE PLANNED AS ALTN FOR ACFT CODE C, D, E AND F']],
     ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A6/27', ALWAYS, ['DUE TO RWY WORKS:', '- ALL ICAO CODE D AND HIGHER ACFT SHALL USE RWY 25C', '- MINIMUM RWY OCCUPANCY TIMES REQUIRED']],
   ];
-  assert.deepEqual(run(big).map((n) => n.reason), ['size', 'size', null, 'size', null, null]);
+  assert.deepEqual(run(big).map((n) => n.reason), ['size', 'size', 'restrict', 'size', null, null]);
   const p = PAGE1.map((l) => l.replace('737-800W', 'B789'));
   const c787 = flightContext(p, [], { ...BRIEF, type: 'B789' });
   assert.deepEqual(run(big, c787).map((n) => n.reason), [null, 'size', null, null, null, null]);
@@ -269,4 +269,21 @@ test('PERM ותיק מ-56 יום מוסתר; PERM חדש מוצג עם תגית;
   ]);
   assert.deepEqual(r.map((n) => n.reason), ['perm', null, null]);
   assert.deepEqual(r.map((n) => !!n.newPerm), [false, true, false]);
+});
+
+test('כלל 2: מגבלה לקבוצה – מוסתרת כשהמטוס בתוכה, מוצגת כשמחוצה לה', () => {
+  const e = (id, text) => ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', id, ALWAYS, text];
+  const list = [
+    e('1A1/27', ['TWY INNER RESTRICTED TO CODE C ACFT. USE MNM PWR ONLY.']),
+    e('1A2/27', ['STAND B12 AVBL FOR ACFT UP TO CODE C ONLY']),
+    e('1A3/27', ['TWY L7 MAX WINGSPAN 36M']),
+    e('1A4/27', ['TWY L8 MAX WINGSPAN 35M']),
+    e('1A5/27', ['STAND 7 AVBL FOR ACFT WITH WING SPAN OF UP TO 65M']),
+    e('1A6/27', ['APRON WORKS:', '- TWY A1 RESTRICTED TO CODE C ACFT', '- TWY A2 CLSD']),
+    e('1A7/27', ['TEMPORARY CRANES UP TO 206 MSL 1.6NM W OF TWY A']),
+  ];
+  assert.deepEqual(run(list).map((n) => n.reason), ['restrict', 'restrict', 'restrict', null, 'restrict', null, null]);
+  const p = PAGE1.map((l) => l.replace('737-800W', 'B789'));
+  const c787 = flightContext(p, [], { ...BRIEF, type: 'B789' });
+  assert.deepEqual(run(list, c787).map((n) => n.reason), [null, null, null, null, 'restrict', null, null]);
 });

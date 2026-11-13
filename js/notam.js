@@ -253,6 +253,24 @@ const APCH_GOOD = /\bLNAV\b|\bVNAV\b|\bILS\b|\bLOC\b|\bVOR\b|\bNDB\b|\bCIRCL|\bG
 function sizeRule(text, fleet) {
   const conds = [];
   const ci = (c) => CODES.indexOf(c);
+  // ‏NOTAM עם כמה סעיפים (רשימה) כולל בדרך כלל גם הוראות לכל המטוסים: מוצג.
+  const listy = /(?:^|\s)(?:-|\d\.|[a-z]\))\s/.test(text) || text.length > 300;
+
+  // ניסוח שמגביל את השימוש לקבוצה: המטוס בתוכה – מוסתר; מחוצה לה – מוצג (בשבילו זו סגירה).
+  const inGroup = [];
+  const CODE_MAX = [
+    /\bRESTRICTED TO (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g,
+    /\bUP TO (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g,
+    /\bCODE (?:LETTER )?([A-F]) (?:AND|OR) (?:BELOW|SMALLER|LOWER|LESS)\b/g,
+    /\bMAX(?:IMUM)? (?:ACFT )?CODE (?:LETTER )?([A-F])\b/g,
+  ];
+  for (const re of CODE_MAX) for (const m of text.matchAll(re)) inGroup.push(ci(fleet.code) <= ci(m[1]));
+  for (const m of text.matchAll(/\b(?:MAX(?:IMUM)? ?(?:WING ?)?SPAN|WING ?SPAN (?:OF )?(UP TO|LESS THAN|BELOW|MAX(?:IMUM)?|NOT EXCEEDING))(?: OF)? (\d+(?:\.\d+)?) ?(M|FT)\b/g)) {
+    const lim = m[3] === 'FT' ? +m[2] / FT_PER_M : +m[2];
+    inGroup.push(/LESS|BELOW/.test(m[1] ?? '') ? fleet.spanM < lim : fleet.spanM <= lim);
+  }
+  if (inGroup.length) return !listy && inGroup.every(Boolean) ? 'restrict' : null;
+
   for (const m of text.matchAll(/(?:GREATER|LARGER|BIGGER|HIGHER) THAN (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g)) conds.push(ci(fleet.code) > ci(m[1]));
   for (const m of text.matchAll(/\bCODE (?:LETTER )?([A-F]) (?:AND|OR) (?:HIGHER|ABOVE|UPPER|LARGER|BIGGER)\b/g)) conds.push(ci(fleet.code) >= ci(m[1]));
   for (const m of text.matchAll(/\bCODE (?:LETTER )?([A-F](?:(?:, ?| AND | OR |\/)[A-F])+)\b/g)) conds.push(m[1].includes(fleet.code));
@@ -262,10 +280,9 @@ function sizeRule(text, fleet) {
   }
   if (!conds.length) return null;
   if (conds.some(Boolean)) return null;
-  // ניסוח של הגבלה (רק לקבוצה) מוצג תמיד.
+  // ניסוח הגבלה שלא זוהה למעלה – מוצג.
   if (/RESTRICTED TO|\bONLY\b|\bUP TO\b|PERMITTED/.test(text)) return null;
-  // ‏NOTAM עם כמה סעיפים (רשימה) כולל בדרך כלל גם הוראות לכל המטוסים: מוצג.
-  if (/(?:^|\s)(?:-|\d\.|[a-z]\))\s/.test(text) || text.length > 300) return null;
+  if (listy) return null;
   return 'size';
 }
 
@@ -400,7 +417,8 @@ function decide(n, ctx) {
   if (cancelsOnly(out.segments)) return hide('cancel');
 
   // כלל 2: מוטה ו-Code.
-  if (sizeRule(text, f)) return hide('size');
+  const size = sizeRule(text, f);
+  if (size) return hide(size);
 
   // כלל 3: קטגוריית גישה. הבלטה של הערך של המטוס, עד הפסיק או סוף השורה.
   if (subj.has('apch')) {
@@ -506,6 +524,7 @@ export const REASON_LABEL = {
   cancel: 'ביטול מגבלה',
   navaid: 'עזר ניווט שאינו ILS',
   perm: 'PERM ותיק (בדפיות Jeppesen)',
+  restrict: 'מגבלת מוטה / Code שהמטוס עומד בה',
 };
 
 export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'Dest ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
