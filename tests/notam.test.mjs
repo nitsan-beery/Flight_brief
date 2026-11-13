@@ -1,7 +1,8 @@
 // בדיקות לסינון NOTAM, על נתונים סינתטיים בלבד (CLAUDE.md: אסור תדריך אמיתי בריפו).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText } from '../js/notam.js';
+import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText, closuresOf } from '../js/notam.js';
+import { resolve } from '../js/notam-map.js';
 
 const T = (s) => Date.UTC(2000 + +s.slice(0, 2), +s.slice(2, 4) - 1, +s.slice(4, 6), +s.slice(6, 8), +s.slice(8, 10));
 
@@ -286,4 +287,49 @@ test('כלל 2: מגבלה לקבוצה – מוסתרת כשהמטוס בתוכ
   const p = PAGE1.map((l) => l.replace('737-800W', 'B789'));
   const c787 = flightContext(p, [], { ...BRIEF, type: 'B789' });
   assert.deepEqual(run(list, c787).map((n) => n.reason), [null, null, null, null, 'restrict', null, null]);
+});
+
+test('סגירות למפה: חניות, מסלולי הסעה וקטעים, מסלולים', () => {
+  const f737 = fleetFor('737-800W'), f787 = fleetFor('B789');
+  const C = (text, f = f737) => closuresOf({ lines: text.split('|') }, f);
+  assert.deepEqual(C('ACFT STANDS H11, H12 AND H14 CLSD DUE TO WIP.').map((e) => e.ref), ['H11', 'H12', 'H14']);
+  assert.deepEqual(C('STANDS X02-X04 CLSD').map((e) => e.ref), ['X02', 'X03', 'X04']);
+  assert.deepEqual(C('TWY INNER EAST OF TWY K CLSD.'), [{ kind: 'twy', ref: 'INNER', seg: { rel: 'E', a: { kind: 'twy', ref: 'K' } } }]);
+  assert.deepEqual(C('RWY 07C CLSD'), [{ kind: 'rwy', ref: '07C' }]);
+  // רשימה אחרי CLOSURE OF THE FLW, עם SECTION OF ובלי המילה TWY.
+  const sup = C('H24 CLOSURE OF THE FLW TWY:|- SECTION OF TWY B BTN DA1 AND BD9 EXCLUDED.|H24 CLOSURE OF THE FLW ACFT PSN:|- X02, X03 AND X04');
+  assert.deepEqual(sup[0], { kind: 'twy', ref: 'B', seg: { rel: 'btn', a: { kind: null, ref: 'DA1' }, b: { kind: null, ref: 'BD9' } } });
+  assert.deepEqual(sup.slice(1).map((e) => `${e.kind} ${e.ref}`), ['stand X02', 'stand X03', 'stand X04']);
+  // לא סגירה: הוראה, תיאור, ומגבלה שהמטוס עומד בה.
+  assert.deepEqual(C('AFTER LDG RWY 28 VACATING TO APN NORTH VIA TWY F ONLY WITH ATC CLEARANCE.'), []);
+  assert.deepEqual(C('STAND IS MARKED WITH DASHED YELLOW LEAD-IN LINE'), []);
+  assert.deepEqual(C('TWY F BTN TWY A AND LINK 3 RESTRICTED TO CODE C ACFT.'), []);
+  // אותה מגבלה ב-787: סגור בשבילו.
+  assert.deepEqual(C('TWY F BTN TWY A AND LINK 3 RESTRICTED TO CODE C ACFT.', f787), [{ kind: 'twy', ref: 'F', seg: { rel: 'btn', a: { kind: 'twy', ref: 'A' }, b: { kind: null, ref: 'LINK 3' } }, forUs: true }]);
+});
+
+test('מפה: קטע לפי צומת, חניה בלי אפס מוביל, ומה שלא נמצא', () => {
+  // ‏INNER משני קווים שנפגשים בצומת 5. ‏K חוצה את INNER בצומת 7.
+  const map = {
+    rwy: [{ r: '10/28', w: 45, p: [0, 300, 1000, 300], j: [] }],
+    twy: [
+      { r: 'INNER', p: [0, 0, 200, 0, 400, 0], j: [[0, 1], [1, 7], [2, 5]] },
+      { r: 'INNER', p: [400, 0, 600, 0], j: [[0, 5], [1, 9]] },
+      { r: 'K', p: [200, -100, 200, 0, 200, 100], j: [[0, 11], [1, 7], [2, 12]] },
+    ],
+    stand: [['X4', 50, 50]],
+    apron: [], term: [],
+  };
+  const r = resolve(map, [
+    { kind: 'twy', ref: 'INNER', seg: { rel: 'E', a: { kind: 'twy', ref: 'K' } } },
+    { kind: 'stand', ref: 'X04' },
+    { kind: 'twy', ref: 'Q9' },
+    { kind: 'twy', ref: 'K', seg: { rel: 'N', a: { kind: 'twy', ref: 'ZZ' } } },
+    { kind: 'rwy', ref: '28' },
+  ]);
+  assert.deepEqual(r.lines[0].pts, [[200, 0], [400, 0], [600, 0]]);
+  assert.deepEqual(r.dots, [{ x: 50, y: 50, label: 'X04' }]);
+  assert.deepEqual(r.missing, ['TWY Q9']);
+  assert.deepEqual(r.whole, ['K']);
+  assert.equal(r.lines.at(-1).label, 'RWY 10/28');
 });

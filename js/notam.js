@@ -250,6 +250,139 @@ const APCH_BAD = /\bLPV\b|\(AR\)|\bRNP ?AR\b|\bSA CAT ?I{1,2}\b|\bRNP 0?\.[0-2]\
 const APCH_GOOD = /\bLNAV\b|\bVNAV\b|\bILS\b|\bLOC\b|\bVOR\b|\bNDB\b|\bCIRCL|\bGLS\b|\bLDA\b|\bPAR\b|\bSRA\b|\bVISUAL\b|\bRNP 0?\.[3-9]|\bRNP 1(?:\.0)?\b/;
 
 /** מוטה ו-Code letter: האם ה-NOTAM מוגדר רק לקבוצת מטוסים שהמטוס לא בה. */
+const GROUP_CODE = [
+  /\bRESTRICTED TO (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g,
+  /\bUP TO (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g,
+  /\bCODE (?:LETTER )?([A-F]) (?:AND|OR) (?:BELOW|SMALLER|LOWER|LESS)\b/g,
+  /\bMAX(?:IMUM)? (?:ACFT )?CODE (?:LETTER )?([A-F])\b/g,
+];
+const GROUP_SPAN = /\b(?:MAX(?:IMUM)? ?(?:WING ?)?SPAN|WING ?SPAN (?:OF )?(UP TO|LESS THAN|BELOW|MAX(?:IMUM)?|NOT EXCEEDING))(?: OF)? (\d+(?:\.\d+)?) ?(M|FT)\b/g;
+
+/** ניסוחים שמגבילים את השימוש לקבוצה (5.3.2, כלל 2). לכל אחד: איפה בטקסט, והאם המטוס בתוכה. */
+function groupRestriction(text, fleet) {
+  const out = [];
+  const ci = (c) => CODES.indexOf(c);
+  for (const re of GROUP_CODE) for (const m of text.matchAll(re)) out.push({ at: m.index, inGroup: ci(fleet.code) <= ci(m[1]) });
+  for (const m of text.matchAll(GROUP_SPAN)) {
+    const lim = m[3] === 'FT' ? +m[2] / FT_PER_M : +m[2];
+    out.push({ at: m.index, inGroup: /LESS|BELOW/.test(m[1] ?? '') ? fleet.spanM < lim : fleet.spanM <= lim });
+  }
+  return out;
+}
+
+// ---------- סגירות למפה (5.3.3) ----------
+
+const K_STAND = String.raw`(?:(?:ACFT |PRKG )?STANDS?|ACFT PSN|PRKG POS(?:ITIONS?)?)`;
+const K_TWY = String.raw`(?:TWYS?|TAXIWAYS?|TXL)`;
+const K_RWY = String.raw`RWYS?`;
+const K_ANY = `(?:${K_STAND}|${K_TWY}|${K_RWY})`;
+const ID = String.raw`(?!(?:OF|TO|AT|IS|BY|ON|IN|NO|NR|OR|AN|BE|AS|FOR|DUE|AND)\b)(?:LINK \d{1,2}|INNER|OUTER|[A-Z]{1,3}\d{1,3}[A-Z]?|[A-Z]{1,2}|\d{1,3}[A-Z]?)`;
+const RWY_ID = String.raw`\d{2}[LRC]?(?:/\d{2}[LRC]?)?`;
+const IDS = `${ID}(?:(?: ?, ?| AND | ?- ?| TO | THRU )${ID})*`;
+const NR = String.raw`(?: NR\.?| NO\.)?`;
+const ANCHOR = `(?:(${K_ANY})${NR} )?(${RWY_ID}|${ID})`;
+// קבוצות: 1 סוג, 2 מזהים; ‏BTN: ‏3–6; צד: 7–9; ליד (BEHIND/ABEAM): 10–11; מסלול: 12.
+const ELEM = new RegExp(String.raw`\b(${K_STAND}|${K_TWY})${NR}( ${IDS})(?: (?:BTN|BETWEEN) ${ANCHOR} AND ${ANCHOR}| (NORTH|SOUTH|EAST|WEST) OF ${ANCHOR}| (?:BEHIND|ABEAM|ADJ(?:ACENT)?(?: TO)?|NEAR|IFO|IN FRONT OF) ${ANCHOR}(?:(?: ?- ?| AND )${ID})*)?(?![A-Z0-9])|\b${K_RWY} (${RWY_ID}(?:(?: ?, ?| AND )${RWY_ID})*)\b`, 'g');
+// קטע שמופיע אחרי CLSD: "TWY A NORTH CLSD BTN TWY C AND TWY E".
+const SEG_AFTER = new RegExp(String.raw`^ (?:(?:BTN|BETWEEN) ${ANCHOR} AND ${ANCHOR}|(NORTH|SOUTH|EAST|WEST) OF ${ANCHOR})`);
+const kindOf = (w) => (!w ? null : new RegExp(`^${K_TWY}$`).test(w) ? 'twy' : new RegExp(`^${K_RWY}$`).test(w) ? 'rwy' : 'stand');
+
+/** רשימת מזהים: "H11, H12 AND H14", "X02-X05" (טווח עם אותה תחילית). */
+function idList(s) {
+  const out = [];
+  const parts = s.trim().split(/ ?, ?| AND /);
+  for (const p of parts) {
+    const r = /^([A-Z]*)(\d+)(?: ?- ?| TO | THRU )\1?(\d+)$/.exec(p);
+    if (r && +r[3] > +r[2] && +r[3] - +r[2] < 30) {
+      for (let i = +r[2]; i <= +r[3]; i++) out.push(r[1] + String(i).padStart(r[2].length, '0'));
+    } else out.push(...p.split(/ ?- ?| TO | THRU /));
+  }
+  return out.filter(Boolean);
+}
+
+/** המרכיבים (חניה, מסלול הסעה, מסלול) שבטקסט, עם הקטע אם יש. */
+function elementsIn(s, kindHint) {
+  const out = [];
+  if (kindHint) {
+    // פריט ברשימה אחרי "CLOSURE OF THE FLW TWY:" – לפעמים בלי המילה TWY.
+    s = s.replace(/^-\s*/, '').replace(/^SECTION OF /, '');
+    if (!new RegExp(`^${K_ANY}\\b`).test(s)) s = `${kindHint === 'twy' ? 'TWY' : 'STAND'} ${s}`;
+  }
+  for (const m of s.matchAll(ELEM)) {
+    if (m[12]) { for (const r of m[12].split(/ ?, ?| AND /)) out.push({ kind: 'rwy', ref: r }); continue; }
+    const kind = kindOf(m[1]);
+    let seg = null;
+    if (m[4]) seg = { rel: 'btn', a: { kind: kindOf(m[3]), ref: m[4] }, b: { kind: kindOf(m[5]), ref: m[6] } };
+    else if (m[7]) seg = { rel: m[7][0], a: { kind: kindOf(m[8]), ref: m[9] } };
+    // ליד חניה או צומת (BEHIND ACFT STAND 524-525): קטע שאי אפשר לחתוך – כל מסלול ההסעה, עם הערה.
+    else if (m[11]) seg = { rel: 'near', a: { kind: kindOf(m[10]), ref: m[11] } };
+    for (const ref of idList(m[2])) out.push(seg && kind === 'twy' ? { kind, ref, seg } : { kind, ref });
+  }
+  return out;
+}
+
+const CLOSED = /\b(?:CLSD|CLOSED)\b/;
+const LIST_HEAD = new RegExp(`CLOSURE OF (?:THE )?(?:FLW|FOLLOWING) (${K_STAND}|${K_TWY})`);
+
+/**
+ * הסגירות שב-NOTAM, לציור במפה (5.3.3). רק מה שסגור, ומגבלה לקבוצה שהמטוס מחוץ לה (forUs).
+ * @returns {{kind:'stand'|'twy'|'rwy', ref:string, seg?:object, forUs?:boolean}[]}
+ */
+export function closuresOf(n, fleet) {
+  const out = [];
+  let listKind = null;
+  for (const s of n.segments ?? segmentsOf(n.lines)) {
+    if (s.omit) continue;
+    const t = s.flat.trim();
+    if (listKind && /^-/.test(t)) {
+      // רק השורה הראשונה של הפריט. שורה שלא מתחילה ב-"-" (‏"IMPACT ON OPS:") – סוף הרשימה.
+      const [first, ...more] = s.text.trim().split('\n');
+      out.push(...elementsIn(first.trim(), listKind));
+      if (more.some((l) => l.trim() && !/^-/.test(l.trim()))) listKind = null;
+      continue;
+    }
+    listKind = null;
+    const head = LIST_HEAD.exec(t);
+    if (head) {
+      listKind = kindOf(head[1]);
+      const rest = t.slice(head.index + head[0].length).replace(/^[:\s]+/, '');
+      if (rest) out.push(...elementsIn(rest, listKind));
+      continue;
+    }
+    const c = CLOSED.exec(t);
+    if (c && !/\bNOT (?:CLSD|CLOSED)\b|\bWILL BE CLSD\b/.test(t)) {
+      // סגירה חלקית של מסלול (‏CLSD FOR TKOF, ‏FOR LDG) – לא במפה.
+      if (/^ FOR (?:TKOF|TAKE-?OFF|LDG|LANDING|ARR|DEP)/.test(t.slice(c.index + c[0].length))) continue;
+      // רק הפסוקית שלפני CLSD: "STANDS 204-206 EXIT ONLY ... DUE TO TWY C1 CLSD" – רק C1.
+      let pre = t.slice(0, c.index);
+      const cut = [...pre.matchAll(/\b(?:DUE TO|BECAUSE OF|EXC(?:EPT)?|ONLY|WITH)\b/g)].at(-1);
+      if (cut) pre = pre.slice(cut.index + cut[0].length);
+      const els = elementsIn(pre);
+      const after = SEG_AFTER.exec(t.slice(c.index + c[0].length));
+      const twys = els.filter((e) => e.kind === 'twy' && !e.seg);
+      if (after && twys.length === 1) {
+        twys[0].seg = after[2]
+          ? { rel: 'btn', a: { kind: kindOf(after[1]), ref: after[2] }, b: { kind: kindOf(after[3]), ref: after[4] } }
+          : { rel: after[5][0], a: { kind: kindOf(after[6]), ref: after[7] } };
+      }
+      out.push(...els);
+      continue;
+    }
+    if (fleet) {
+      const outside = groupRestriction(t, fleet).filter((g) => !g.inGroup);
+      if (outside.length) for (const e of elementsIn(t.slice(0, Math.min(...outside.map((g) => g.at))))) out.push({ ...e, forUs: true });
+    }
+  }
+  // אותו מרכיב פעמיים – פעם אחת.
+  const seen = new Set();
+  return out.filter((e) => {
+    const k = [e.kind, e.ref, e.seg?.rel, e.seg?.a.ref, e.seg?.b?.ref].join('|');
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 function sizeRule(text, fleet) {
   const conds = [];
   const ci = (c) => CODES.indexOf(c);
@@ -257,18 +390,7 @@ function sizeRule(text, fleet) {
   const listy = /(?:^|\s)(?:-|\d\.|[a-z]\))\s/.test(text) || text.length > 300;
 
   // ניסוח שמגביל את השימוש לקבוצה: המטוס בתוכה – מוסתר; מחוצה לה – מוצג (בשבילו זו סגירה).
-  const inGroup = [];
-  const CODE_MAX = [
-    /\bRESTRICTED TO (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g,
-    /\bUP TO (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g,
-    /\bCODE (?:LETTER )?([A-F]) (?:AND|OR) (?:BELOW|SMALLER|LOWER|LESS)\b/g,
-    /\bMAX(?:IMUM)? (?:ACFT )?CODE (?:LETTER )?([A-F])\b/g,
-  ];
-  for (const re of CODE_MAX) for (const m of text.matchAll(re)) inGroup.push(ci(fleet.code) <= ci(m[1]));
-  for (const m of text.matchAll(/\b(?:MAX(?:IMUM)? ?(?:WING ?)?SPAN|WING ?SPAN (?:OF )?(UP TO|LESS THAN|BELOW|MAX(?:IMUM)?|NOT EXCEEDING))(?: OF)? (\d+(?:\.\d+)?) ?(M|FT)\b/g)) {
-    const lim = m[3] === 'FT' ? +m[2] / FT_PER_M : +m[2];
-    inGroup.push(/LESS|BELOW/.test(m[1] ?? '') ? fleet.spanM < lim : fleet.spanM <= lim);
-  }
+  const inGroup = groupRestriction(text, fleet).map((g) => g.inGroup);
   if (inGroup.length) return !listy && inGroup.every(Boolean) ? 'restrict' : null;
 
   for (const m of text.matchAll(/(?:GREATER|LARGER|BIGGER|HIGHER) THAN (?:ICAO )?CODE (?:LETTER )?([A-F])\b/g)) conds.push(ci(fleet.code) > ci(m[1]));
@@ -342,7 +464,12 @@ export const displayText = (n) => n.segments.filter((s) => !s.omit).map((s) => s
  * @returns Notam עם shown, reason (כשמוסתר), subjects, roles, segments (קטעים, עם omit ו-marks להבלטה)
  */
 export function filterNotams(notams, ctx) {
-  return notams.map((n) => decide(n, ctx));
+  return notams.map((n) => {
+    const d = decide(n, ctx);
+    // סגירות למפה (5.3.3), רק ל-NOTAM מוצגים.
+    if (d.shown) d.closures = closuresOf(d, ctx.fleet);
+    return d;
+  });
 }
 
 const PERM_AGE = 56 * 24 * 3600 * 1000;

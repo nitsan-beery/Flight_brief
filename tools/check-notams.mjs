@@ -5,12 +5,19 @@
 // הרצה:  node tools/check-notams.mjs [תיקייה] [--shown] [--hidden] [--only=LY347]
 //   --shown   ה-NOTAM המוצגים במלואם. [✂ ...] קטע מושמט (גישה לא מאושרת), «...» טקסט מובלט
 //   --hidden  רשימת ה-NOTAM שהוסתרו בשדות רלוונטיים, עם הסיבה
+//   --closures  הסגירות למפה (5.3.3) והתאמתן לקובץ המפה של השדה (data/maps)
 
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { openPdf, extractPage } from '../js/pdf/extract.js';
 import { parseBrief, toLines } from '../js/brief.js';
 import { parseBulletin, flightContext, filterNotams, REASON_LABEL, ROLE_LABEL, SUBJECT_LABEL } from '../js/notam.js';
+import { resolve } from '../js/notam-map.js';
+
+const mapDir = new URL('../data/maps/', import.meta.url);
+const maps = {};
+const mapOf = async (icao) => (icao in maps ? maps[icao] : (maps[icao] = JSON.parse(await readFile(new URL(`${icao}.json`, mapDir), 'utf8').catch(() => 'null'))));
+const segText = (s) => (!s ? '' : s.rel === 'btn' ? ` BTN ${s.a.ref} AND ${s.b.ref}` : ` ${s.rel} OF ${s.a.ref}`);
 
 const args = process.argv.slice(2);
 const flag = (f) => args.includes(f);
@@ -69,6 +76,14 @@ for (const f of files) {
         return t;
       }).join('');
       for (const l of body.split('\n')) if (l.trim()) console.log(`              ${l.trim()}`);
+    }
+    if (flag('--closures')) {
+      const map = await mapOf(ap.icao);
+      for (const n of here.filter((x) => x.shown && x.closures.length)) {
+        const r = map && resolve(map, n.closures);
+        const note = !map ? 'אין מפה' : [r.missing.length ? `לא נמצא: ${r.missing.join(', ')}` : '', r.whole.length ? `קטע לא זוהה: ${r.whole.join(', ')}` : ''].filter(Boolean).join(' · ') || 'הכול נמצא';
+        console.log(`        ⛔ ${n.id}  ${n.closures.map((c) => `${c.forUs ? '*' : ''}${c.kind} ${c.ref}${segText(c.seg)}`).join(', ')}  → ${note}`);
+      }
     }
     if (flag('--hidden')) for (const n of here.filter((x) => !x.shown && (flag('--all-reasons') || FILTER_REASONS.includes(x.reason) || x.reason === 'subject' || x.reason === 'sid'))) {
       console.log(`        ✗ ${n.id} [${REASON_LABEL[n.reason]}] ${n.lines.slice(0, 3).join(' / ').slice(0, 160)}`);

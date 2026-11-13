@@ -3,6 +3,13 @@
 // הלוגיקה עצמה ב-notam.js. כאן רק בניית ה-DOM, עם textContent (בלי HTML מהתדריך).
 
 import { GROUPS, GROUP_LABEL, groupOf, validLabel, hhColon, REASON_LABEL, ROLE_LABEL } from './notam.js';
+import { mapIndex, loadMap, drawMap, resolve } from './notam-map.js';
+
+const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>';
+const MAP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>';
+
+// טקסט LTR בתוך משפט בעברית: בידוד כיווניות (LRI … PDI), כדי שלא יתהפך הסדר.
+const ltr = (t) => `\u2066${t}\u2069`;
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -30,13 +37,22 @@ function notamText(n) {
   return box;
 }
 
-function notamItem(n, reason) {
+function notamItem(n, reason, fleet) {
   const item = el('div', 'nt');
   const meta = el('div', 'nt-meta');
   meta.dir = 'ltr';
   meta.append(el('span', null, n.id), el('span', null, validLabel(n.valid)));
   if (n.temporary) meta.append(el('span', 'nt-tmp', 'זמני'));
   if (n.newPerm && !reason) meta.append(el('span', 'nt-tmp', 'PERM חדש'));
+  if (!reason && fleet && n.closures?.some((c) => c.forUs)) { const ch = el('span', 'nt-closed', `סגור ל-${ltr(`Code ${fleet.code}`)}`); ch.dir = 'rtl'; meta.append(ch); }
+  if (!reason && n.closures?.length) {
+    const pin = el('button', 'nt-pin');
+    pin.type = 'button';
+    pin.hidden = true;
+    pin.setAttribute('aria-label', 'הצג במפה');
+    pin.innerHTML = PIN;
+    meta.append(pin);
+  }
   if (reason) meta.append(el('span', 'nt-why', REASON_LABEL[reason] ?? reason));
   item.append(meta);
   if (reason) {
@@ -55,7 +71,36 @@ function windowLabel(roles) {
   return `${hhColon(from)}–${hhColon(to)}Z`;
 }
 
-function card(c) {
+/** מפת הסגירות בכרטיס (5.3.3): נבנית בלחיצה הראשונה. */
+function mapPanel(c, fleet, body) {
+  const panel = el('div', 'nt-mapbox');
+  panel.hidden = true;
+  const msg = el('p', 'nt-mapmsg');
+  let ctl = null;
+  async function open(items, zoom) {
+    if (!ctl) {
+      const map = await loadMap(c.icao);
+      if (!map) { panel.hidden = false; panel.replaceChildren(el('p', 'nt-mapmsg', 'המפה של השדה לא נטענה.')); return; }
+      ctl = drawMap(map);
+      ctl.map = map;
+      panel.replaceChildren(ctl.svg, msg, el('p', 'nt-osm', `© OpenStreetMap contributors · ${map.date}`));
+    }
+    panel.hidden = false;
+    body.classList.add('has-map');
+    const res = resolve(ctl.map, items.flatMap((n) => n.closures));
+    ctl.show(res, zoom);
+    const parts = [];
+    if (res.missing.length) parts.push(`לא נמצא במפה: ${ltr(res.missing.join(', '))}.`);
+    if (res.whole.length) parts.push(`הקטע לא זוהה, מסומן כל ה-TWY: ${ltr(res.whole.join(', '))}.`);
+    if (zoom && fleet && items.some((n) => n.closures.some((x) => x.forUs))) parts.push(`סגור ל-${ltr(`Code ${fleet.code}`)}: המטוס מחוץ למגבלה.`);
+    if (!res.lines.length && !res.dots.length && !parts.length) parts.push('אין מה לסמן במפה.');
+    msg.textContent = parts.join(' ');
+    if (matchMedia('(max-width: 899px)').matches) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  return { panel, open };
+}
+
+function card(c, fleet) {
   const box = el('section', 'nt-card');
   const hd = el('div', 'nt-hd');
   const icao = el('span', 'nt-icao', c.icao);
@@ -68,13 +113,44 @@ function card(c) {
   box.append(hd);
   for (const r of c.roles) if (r.note) box.append(el('p', 'nt-empty', `${ROLE_LABEL[r.role]}: ${r.note}. ה-NOTAM מוצגים בלי סינון לפי זמן.`));
 
-  if (!c.shown.length) box.append(el('p', 'nt-empty', 'אין NOTAM רלוונטי'));
+  const body = el('div', 'nt-body');
+  const list = el('div', 'nt-list');
+  body.append(list);
+  box.append(body);
+  if (!c.shown.length) list.append(el('p', 'nt-empty', 'אין NOTAM רלוונטי'));
   const groups = new Map(GROUPS.map((g) => [g, []]));
   for (const n of c.shown) groups.get(groupOf(n)).push(n);
-  for (const [g, list] of groups) {
-    if (!list.length) continue;
-    box.append(el('div', 'nt-grp', GROUP_LABEL[g]));
-    for (const n of list) box.append(notamItem(n));
+  const closing = [];
+  for (const [g, items] of groups) {
+    if (!items.length) continue;
+    list.append(el('div', 'nt-grp', GROUP_LABEL[g]));
+    for (const n of items) {
+      const item = notamItem(n, null, fleet);
+      list.append(item);
+      if (n.closures?.length) closing.push([n, item]);
+    }
+  }
+
+  // מפת סגירות: רק כשיש סגירה ויש קובץ מפה לשדה.
+  if (closing.length) {
+    const { panel, open } = mapPanel(c, fleet, body);
+    body.prepend(panel);
+    const allBtn = el('button', 'nt-mapbtn');
+    allBtn.type = 'button';
+    allBtn.hidden = true;
+    allBtn.innerHTML = `${MAP_ICON}<span>מפת סגירות</span>`;
+    hd.insertBefore(allBtn, win);
+    const select = (item) => { for (const [, it] of closing) it.classList.toggle('on', it === item); };
+    allBtn.addEventListener('click', () => { select(null); open(closing.map(([n]) => n), false); });
+    for (const [n, item] of closing) {
+      const pin = item.querySelector('.nt-pin');
+      pin.addEventListener('click', () => { select(item); open([n], true); });
+    }
+    mapIndex().then((idx) => {
+      if (!idx[c.icao]) return;
+      allBtn.hidden = false;
+      for (const [, item] of closing) item.querySelector('.nt-pin').hidden = false;
+    });
   }
 
   if (c.hidden.length) {
@@ -108,5 +184,5 @@ export function renderNotams(slot, res) {
   sum.append(` · מוצגים ${res.shown} מתוך ${res.total}`);
   slot.append(sum);
   for (const w of ctx.warnings) slot.append(el('p', 'note nt-warn', w));
-  for (const c of res.cards) slot.append(card(c));
+  for (const c of res.cards) slot.append(card(c, f));
 }

@@ -4,7 +4,7 @@
 // ובלי חיבור האפליקציה נפתחת מהעותק האחרון. בכל שינוי בקובץ שברשימה, או ברשימה עצמה, מעלים את CACHE
 // ואת APP_VERSION ב-js/app.js לאותו מספר. בלי זה האפליקציה המותקנת באייפד עלולה להמשיך להציג את הגרסה הקודמת.
 
-const CACHE = 'flight-brief-v58';
+const CACHE = 'flight-brief-v59';
 const SHELL = [
   './',
   'index.html',
@@ -20,6 +20,8 @@ const SHELL = [
   'js/opt.js',
   'js/notam.js',
   'js/notam-view.js',
+  'js/notam-map.js',
+  'data/maps/index.json',
   'js/pdf/extract.js',
   'vendor/pdfjs/pdf.mjs',
   'vendor/pdfjs/pdf.worker.mjs',
@@ -29,8 +31,17 @@ const SHELL = [
   'icons/apple-touch-icon.png',
 ];
 
+// קובצי המפה (requirements.md, 5.3.3) נשמרים בהתקנה לפי data/maps/index.json, כדי שהמפה תעבוד גם בטיסה.
+const mapFiles = () => fetch('data/maps/index.json', { cache: 'no-cache' })
+  .then((r) => r.json())
+  .then((j) => Object.keys(j.maps ?? {}).map((k) => `data/maps/${k}.json`))
+  .catch(() => []);
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then(async (c) => {
+    await c.addAll(SHELL);
+    await c.addAll(await mapFiles());
+  }).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -41,15 +52,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// רק קבצי האפליקציה נשמרים במטמון. שום קובץ אחר מאותו מקור לא נשמר.
+// רק קבצי האפליקציה וקובצי המפה נשמרים במטמון. שום קובץ אחר מאותו מקור לא נשמר.
 const SHELL_URLS = new Set(SHELL.map((p) => new URL(p, self.location).href));
+const MAP_DIR = new URL('data/maps/', self.location).href;
+const cached = (href) => SHELL_URLS.has(href) || (href.startsWith(MAP_DIR) && href.endsWith('.json'));
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
   url.search = '';
   url.hash = '';
-  if (req.method !== 'GET' || !SHELL_URLS.has(url.href)) return;
+  if (req.method !== 'GET' || !cached(url.href)) return;
   // GitHub Pages שולח max-age=600. no-cache שואל את השרת בכל טעינה (ETag), ומקבל 304 קצר כשלא השתנה דבר.
   event.respondWith(
     fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' })
