@@ -52,13 +52,13 @@ function briefCell(label, keys, fields) {
   return `<div class="cell"><div class="lb">${label}</div><div class="v${missing ? ' missing' : ''}">${esc(text)}</div></div>`;
 }
 
-function inputCell(label, key, value, mode) {
-  return `<div class="cell"><div class="lb">${label}</div><input data-k="${key}" inputmode="${mode}" autocomplete="off" value="${esc(value)}" aria-label="${label}"></div>`;
+function inputCell(label, key, value, mode, ro = false) {
+  return `<div class="cell"><div class="lb">${label}</div><input data-k="${key}" inputmode="${mode}" autocomplete="off" value="${esc(value)}" aria-label="${label}"${ro ? ' readonly' : ''}></div>`;
 }
 
-/** תיבה אחת בתוך משבצת המהירויות של OPT (requirements.md, 5.1.1). */
+/** תיבה אחת בתוך משבצת המהירויות של OPT, לקריאה בלבד (requirements.md, 5.1.1 ו-5.1.3). */
 function speed(label, key, value) {
-  return `<div><div class="lb">${label}</div><input data-k="${key}" inputmode="numeric" autocomplete="off" value="${esc(value)}" aria-label="${label}"></div>`;
+  return `<div><div class="lb">${label}</div><input data-k="${key}" inputmode="numeric" autocomplete="off" value="${esc(value)}" aria-label="${label}" readonly></div>`;
 }
 
 function crewCell(label, list, names) {
@@ -96,7 +96,7 @@ export function renderSheet(slot, brief, manual, on) {
     <div class="sec">Loadsheet</div>
     <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">${inputCell('CG (MACTOW)', 'cg', manual.cg, 'decimal')}${inputCell('SOB', 'sob', manual.sob, 'numeric')}</div>
     <div class="sec sec-row"><span>OPT</span><button type="button" class="cal-link opt-link" dir="rtl">טען מקובץ</button></div>
-    <div class="grid opt">${inputCell('FLAPS', 'flap', manual.flap, 'numeric')}${inputCell('N1', 'n1', manual.n1, 'decimal')}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
+    <div class="grid opt">${inputCell('FLAPS', 'flap', manual.flap, 'numeric', true)}${inputCell('N1', 'n1', manual.n1, 'decimal', true)}<div class="cell speeds">${speed('V1', 'v1', manual.v1)}${speed('VR', 'vr', manual.vr)}${speed('V2', 'v2', manual.v2)}</div></div>
     <div class="opt-msg" role="status" hidden></div>
     <div class="legend">כלי עזר בלבד</div>`;
 

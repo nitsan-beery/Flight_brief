@@ -12,7 +12,7 @@ import { analyzeBrief } from './notam.js';
 import { renderNotams } from './notam-view.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 53;
+const APP_VERSION = 54;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
