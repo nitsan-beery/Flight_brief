@@ -138,6 +138,7 @@ button:disabled{opacity:.4;cursor:default}
 .dlg{border:none;border-radius:14px;background:var(--sheet);color:var(--tx);padding:20px 24px;width:min(420px,calc(100vw - 32px))}
 .dlg::backdrop{background:rgba(0,0,0,.35)}
 .dlg-title{font-size:17px;font-weight:600;margin:0 0 8px}
+.dlg-warn{color:var(--warn)}
 .dlg-sub{font-size:14px;color:var(--tx2);margin:0 0 4px}
 .dlg-q{font-size:14px;margin:14px 0 8px}
 .dlg-vals{background:var(--card);border-radius:10px;padding:10px 14px;font-size:15px;line-height:1.6;font-variant-numeric:tabular-nums;white-space:pre-line}

@@ -124,18 +124,26 @@ export function renderSheet(slot, brief, manual, on) {
     optMsg.classList.toggle('bad', bad);
     optMsg.hidden = false;
   };
-  /** "להחליף את ערכי ה-OPT?" בחלונית, באותו מסמך שבו הדפית מוצגת. */
-  const askReplace = (vals) => new Promise((resolve) => {
+  /**
+   * חלונית, באותו מסמך שבו הדפית מוצגת: "להחליף את ערכי ה-OPT?", או אזהרה על מטוס אחר עם "טען" ו"בטל"
+   * (גרסה 45). באזהרה המיקוד על "בטל", וסגירה בלי בחירה היא "בטל".
+   */
+  const askOpt = (vals, warn) => new Promise((resolve) => {
     const doc = el.ownerDocument;
     doc.querySelector('#opt-dlg')?.remove();
     const dlg = doc.createElement('dialog');
     dlg.id = 'opt-dlg';
     dlg.className = 'dlg';
     dlg.dir = 'rtl';
-    dlg.innerHTML = `<form method="dialog"><h2 class="dlg-title">להחליף את ערכי ה-OPT?</h2>
-      <div class="dlg-vals" dir="ltr"></div>
-      <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri" autofocus>החלף</button><button value="no">בטל</button></div></form>`;
-    dlg.querySelector('.dlg-vals').textContent = vals.join('\n');
+    dlg.innerHTML = warn
+      ? `<form method="dialog"><h2 class="dlg-title dlg-warn">אזהרה: מטוס אחר</h2><p class="dlg-q"></p>
+        ${vals ? '<p class="dlg-sub">ערכי ה-OPT יוחלפו:</p><div class="dlg-vals" dir="ltr"></div>' : ''}
+        <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri">טען</button><button value="no" autofocus>בטל</button></div></form>`
+      : `<form method="dialog"><h2 class="dlg-title">להחליף את ערכי ה-OPT?</h2>
+        <div class="dlg-vals" dir="ltr"></div>
+        <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri" autofocus>החלף</button><button value="no">בטל</button></div></form>`;
+    if (warn) dlg.querySelector('.dlg-q').textContent = warn;
+    if (vals) dlg.querySelector('.dlg-vals').textContent = vals.join('\n');
     dlg.addEventListener('close', () => { resolve(dlg.returnValue === 'yes'); dlg.remove(); });
     doc.body.append(dlg);
     dlg.showModal();
@@ -158,7 +166,7 @@ export function renderSheet(slot, brief, manual, on) {
     const plan = planOpt(r.opt, brief, manual);
     if (!plan.ok) { showOpt(plan.error, true); return; }
     optMsg.hidden = true;
-    if (!plan.ask || await askReplace(plan.ask)) applyOpt(r.opt);
+    if ((!plan.ask && !plan.warn) || await askOpt(plan.ask, plan.warn)) applyOpt(r.opt);
   };
   el.loadOpt = loadOpt;
   const pickOpt = () => {

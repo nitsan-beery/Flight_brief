@@ -17,7 +17,7 @@ const GOOD = L(
 );
 
 test('N1 ו-V1/VR/V2 מקובץ OPT', () => {
-  assert.deepEqual(parseOpt(GOOD), { ok: true, opt: { apt: 'EDDF', rwy: '25C', tow: '70100', flap: '5', n1: '94.2', v1: '142', vr: '147', v2: '153' } });
+  assert.deepEqual(parseOpt(GOOD), { ok: true, opt: { ac: 'XYZ', apt: 'EDDF', rwy: '25C', tow: '70100', flap: '5', n1: '94.2', v1: '142', vr: '147', v2: '153' } });
 });
 
 test('קובץ שאינו OPT נדחה', () => {
@@ -55,4 +55,23 @@ test('בלי FLAP: נדחה', () => {
   const r = parseOpt(GOOD.map((l) => ({ text: l.text.replace('FLAP 5', '') })));
   assert.equal(r.ok, false);
   assert.match(r.error, /FLAPS/);
+});
+
+test('אותו מטוס: בלי אזהרה', () => {
+  assert.equal(planOpt(opt, { org: 'EDDF', reg: '4XXYZ' }, empty).warn, null);
+});
+
+test('מטוס אחר: אזהרה, והנתונים לא נדחים (גרסה 45)', () => {
+  const r = planOpt(opt, { org: 'EDDF', reg: '4XABC' }, { ...empty, n1: '93.0' });
+  assert.equal(r.ok, true);
+  assert.match(r.warn, /XYZ.*4XABC/);
+  assert.ok(r.ask);
+});
+
+test('בלי רישום בתדריך: אזהרה, בלי ניחוש', () => {
+  assert.match(planOpt(opt, { org: 'EDDF', reg: '' }, empty).warn, /לא נמצא/);
+});
+
+test('שדה שונה: נדחה לפני בדיקת המטוס', () => {
+  assert.equal(planOpt(opt, { org: 'LLBG', reg: '4XABC' }, empty).ok, false);
 });

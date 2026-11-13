@@ -4,7 +4,7 @@
 // אין ניחוש שקט: קובץ שחסר בו אחד מהם נדחה כולו. ATM לא נלקח (החלטת הבעלים). CG אינו בקובץ.
 
 const TITLE = /OPT TAKEOFF CALCULATION RESULTS/;
-const RWY = /^\|\s*\S+\s*\|\s*([A-Z]{4})\s+(\S+)/;
+const RWY = /^\|\s*(\S+)\s*\|\s*([A-Z]{4})\s+(\S+)/; // | EKI | LSZH 28 WET |: קוד המטוס, שדה, מסלול
 const N1 = /\bN1:\s*(\d+(?:\.\d+)?)\b/;
 const SPEEDS = /\bTO SPEEDS:\s*(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)\b/;
 const TOW = /\bTOW:\s*(\d+)\s*KG\b/;
@@ -20,8 +20,8 @@ const first = (lines, re) => {
 
 /**
  * @param {{text:string}[]} lines שורות העמוד
- * @returns {{ok:true, opt:{apt, rwy, tow, flap, n1, v1, vr, v2}} | {ok:false, error:string}}
- * tow: ק"ג כמחרוזת, או null כשאינו בקובץ (מוצג בהודעה בלבד).
+ * @returns {{ok:true, opt:{ac, apt, rwy, tow, flap, n1, v1, vr, v2}} | {ok:false, error:string}}
+ * ac: קוד המטוס, שלוש האותיות האחרונות של הרישום (EKI ל-4XEKI). tow: ק"ג כמחרוזת, או null כשאינו בקובץ (מוצג בהודעה בלבד).
  */
 export function parseOpt(lines) {
   if (!first(lines, TITLE)) return { ok: false, error: 'הקובץ לא זוהה כהדפסה של ה-OPT.' };
@@ -32,7 +32,7 @@ export function parseOpt(lines) {
   const missing = [!rwy && 'שדה ומסלול', !flap && 'FLAPS', !n1 && 'N1', !sp && 'V1/VR/V2'].filter(Boolean);
   if (missing.length) return { ok: false, error: `בקובץ ה-OPT לא נמצא: ${missing.join(', ')}. הנתונים לא נטענו.` };
   const tow = first(lines, TOW);
-  return { ok: true, opt: { apt: rwy[1], rwy: rwy[2], tow: tow ? tow[1] : null, flap: flap[1], n1: n1[1], v1: sp[1], vr: sp[2], v2: sp[3] } };
+  return { ok: true, opt: { ac: rwy[1], apt: rwy[2], rwy: rwy[3], tow: tow ? tow[1] : null, flap: flap[1], n1: n1[1], v1: sp[1], vr: sp[2], v2: sp[3] } };
 }
 
 export const OPT_KEYS = ['flap', 'n1', 'v1', 'vr', 'v2'];
@@ -40,12 +40,17 @@ const LABEL = { flap: 'FLAPS' };
 
 /**
  * מה לעשות עם הנתונים מול התדריך והדפית.
- * @returns {{ok:false, error} | {ok:true, ask:string[]|null}} ask: שורות "קיים → חדש" כשיש כבר ערכים.
+ * @returns {{ok:false, error} | {ok:true, ask:string[]|null, warn:string|null}} ask: שורות "קיים → חדש" כשיש
+ *   כבר ערכים. warn: מטוס אחר, לשאלה "טען" או "בטל" (גרסה 45).
  */
 export function planOpt(opt, brief, manual) {
   if (opt.apt !== brief.org) return { ok: false, error: `קובץ ה-OPT הוא ל-${opt.apt}, והתדריך יוצא מ-${brief.org}. הנתונים לא נטענו.` };
   const cur = (k) => String(manual[k] ?? '').trim();
   const has = OPT_KEYS.some(cur);
   const ask = has ? OPT_KEYS.map((k) => `${LABEL[k] ?? k.toUpperCase()} ${cur(k) || '—'} → ${opt[k]}`) : null;
-  return { ok: true, ask };
+  const reg = String(brief.reg ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const warn = reg && reg.endsWith(opt.ac.toUpperCase()) ? null
+    : reg ? `קובץ ה-OPT הוא למטוס ${opt.ac}, והתדריך למטוס ${brief.reg}.`
+    : `קובץ ה-OPT הוא למטוס ${opt.ac}, ורישום המטוס לא נמצא בתדריך.`;
+  return { ok: true, ask, warn };
 }
