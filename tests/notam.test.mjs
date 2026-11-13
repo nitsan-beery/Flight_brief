@@ -193,6 +193,17 @@ test('NOTAM שמבטל מגבלה מוסתר; ביטול נוהל או מגבל�
   assert.deepEqual(r.map((n) => n.reason), ['cancel', null, null, null, 'cancel', null]);
 });
 
+test('עזרי ניווט שאינם ILS מוסתרים; ILS ונהלים – מוצגים', () => {
+  const r = run([
+    ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', '1A1/27', ALWAYS, ["DME 'CGN' CH100Y U/S."]],
+    ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A2/27', ALWAYS, ['DVOR/DME STJ 113.200MHZ/CH 79X U/S']],
+    ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A3/27', ALWAYS, ['ILS-LOC,GP,DME FOR RWY 16L U/S DUE TO CONST']],
+    ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A4/27', ALWAYS, ['VOR Y RWY 36R PROCEDURE: MAPT D3.5 ALTITUDE 610FT']],
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A5/27', ALWAYS, ['DUE TO FAILURE OF VOR/DME, CONVENTIONAL INSTRUMENT APPROACH PROCEDURES NOT AVBL']],
+  ]);
+  assert.deepEqual(r.map((n) => n.reason), ['navaid', 'navaid', null, null, null]);
+});
+
 test('כלל 2: מוטה ו-Code', () => {
   const big = [
     ['DESTINATION AIRPORT', 'EDDF', 'AIRPORT', '1A1/27', ALWAYS, ['TWY K CLSD FOR ACFT GREATER THAN ICAO', 'CODE C (SPAN 36M).']],

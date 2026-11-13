@@ -231,6 +231,9 @@ const SUBJECTS = {
   light: /\bALSF?\b|\bPAPI\b|\bVASIS?\b|\bLGTS?\b|\bLIGHT|\bRCLL\b|\bRTZL\b|\bREDL\b|\bRENL\b|\bRTIL\b|\bTDZ\b|\bGP\b|\bGS\b|GLIDE ?(?:PATH|SLOPE)|\bDME\b|\bVOR\b|\bNDB\b|\bILS\b|\bLOC\b|\bLLZ\b|\bGBAS\b/,
   rffs: /\bRFFS?\b|\bARFFS\b|FIRE ?FIGHTING|RESCUE AND FIRE|\bFIRE CAT/,
 };
+const NAVAID = /\b(?:D?VOR|DME|NDB|TACAN|VORTAC|LOCATOR)\b/;
+const NAVAID_KEEP = /\bILS\b|\bLOC\b|\bLOCALI[SZ]ER\b|\bLLZ\b|\bGP\b|\bGS\b|GLIDE ?(?:PATH|SLOPE)|\bIAP\b|\bIAC\b|\bAPCH\b|\bAPPROACH|\bPROC(?:EDURES?)?\b|\bSIDS?\b|\bSTARS?\b|\bDEPARTURE\b|\bARRIVAL\b|\bTRANSITION\b|\bOCA\b|\bOCH\b|\bMDA\b|\bMINIMA\b|\bMINIMUMS?\b|\bRWY\b/;
+
 export const SUBJECT_LABEL = { stand: 'חניה', twy: 'הסעה', rwy: 'מסלול', sid: 'SID', star: 'STAR', apch: 'גישה ומינימות', ad: 'סגירה ושעות', light: 'תאורה ועזרי ניווט', rffs: 'RFFS' };
 
 function subjectsOf(n, text) {
@@ -360,6 +363,9 @@ function decide(n, ctx) {
   const relevant = [...subj].filter((s) => s !== 'sid' || isDep);
   if (!relevant.length) return hide(subj.has('sid') ? 'sid' : 'subject');
 
+  // עזרי ניווט שאינם ILS (5.3): NOTAM שעוסק רק במצב העזר. ‏NOTAM על ILS או על נוהל – נשאר.
+  if (NAVAID.test(text) && !NAVAID_KEEP.test(text) && relevant.every((s) => s === 'light' || s === 'apch')) return hide('navaid');
+
   const f = ctx.fleet;
   if (!f) return cancelsOnly(out.segments) ? hide('cancel') : out;
 
@@ -423,6 +429,7 @@ export const REASON_LABEL = {
   'apch-cat': 'קטגוריית גישה אחרת',
   mtow: 'MTOW מעל המטוס',
   cancel: 'ביטול מגבלה',
+  navaid: 'עזר ניווט שאינו ILS',
 };
 
 export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'Dest ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
