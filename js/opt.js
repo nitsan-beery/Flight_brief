@@ -51,6 +51,7 @@ export function planOpt(opt, brief, manual) {
   if (opt.apt !== brief.org) warn.push(`קובץ ה-OPT הוא ל-${opt.apt}, והתדריך יוצא מ-${brief.org}.`);
   const reg = String(brief.reg ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!reg) warn.push(`קובץ ה-OPT הוא למטוס ${opt.ac}, ורישום המטוס לא נמצא בתדריך.`);
-  else if (!reg.endsWith(opt.ac.toUpperCase())) warn.push(`קובץ ה-OPT הוא למטוס ${opt.ac}, והתדריך למטוס ${brief.reg}.`);
+  // בהודעה בלי הקידומת 4X (גרסה 47).
+  else if (!reg.endsWith(opt.ac.toUpperCase())) warn.push(`קובץ ה-OPT הוא למטוס ${opt.ac}, והתדריך למטוס ${reg.replace(/^4X/, '')}.`);
   return { ask, warn: warn.length ? warn : null };
 }

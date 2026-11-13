@@ -61,7 +61,7 @@ test('שדה אחר: אזהרה, לא דחייה (גרסה 46)', () => {
 test('מטוס אחר: אזהרה (גרסה 45)', () => {
   const r = planOpt(opt, { ...same, reg: '4XABC' }, { ...empty, n1: '93.0' });
   assert.equal(r.warn.length, 1);
-  assert.match(r.warn[0], /XYZ.*4XABC/);
+  assert.match(r.warn[0], /למטוס XYZ, והתדריך למטוס ABC\./);
   assert.ok(r.ask);
 });
 
@@ -69,7 +69,7 @@ test('שדה ומטוס אחרים: שתי שורות באותה אזהרה', ()
   const r = planOpt(opt, { org: 'LLBG', reg: '4XABC' }, empty);
   assert.equal(r.warn.length, 2);
   assert.match(r.warn[0], /LLBG/);
-  assert.match(r.warn[1], /4XABC/);
+  assert.match(r.warn[1], /למטוס ABC\./);
 });
 
 test('בלי רישום בתדריך: אזהרה, בלי ניחוש', () => {
