@@ -40,17 +40,17 @@ const LABEL = { flap: 'FLAPS' };
 
 /**
  * מה לעשות עם הנתונים מול התדריך והדפית.
- * @returns {{ok:false, error} | {ok:true, ask:string[]|null, warn:string|null}} ask: שורות "קיים → חדש" כשיש
- *   כבר ערכים. warn: מטוס אחר, לשאלה "טען" או "בטל" (גרסה 45).
+ * @returns {{ask:string[]|null, warn:string[]|null}} ask: שורות "קיים → חדש" כשיש כבר ערכים. warn: שדה אחר
+ *   ו/או מטוס אחר, שורה לכל אחד, לשאלה "טען" או "בטל" (requirements.md, 5.1.3, גרסאות 45–46).
  */
 export function planOpt(opt, brief, manual) {
-  if (opt.apt !== brief.org) return { ok: false, error: `קובץ ה-OPT הוא ל-${opt.apt}, והתדריך יוצא מ-${brief.org}. הנתונים לא נטענו.` };
   const cur = (k) => String(manual[k] ?? '').trim();
   const has = OPT_KEYS.some(cur);
   const ask = has ? OPT_KEYS.map((k) => `${LABEL[k] ?? k.toUpperCase()} ${cur(k) || '—'} → ${opt[k]}`) : null;
+  const warn = [];
+  if (opt.apt !== brief.org) warn.push(`קובץ ה-OPT הוא ל-${opt.apt}, והתדריך יוצא מ-${brief.org}.`);
   const reg = String(brief.reg ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const warn = reg && reg.endsWith(opt.ac.toUpperCase()) ? null
-    : reg ? `קובץ ה-OPT הוא למטוס ${opt.ac}, והתדריך למטוס ${brief.reg}.`
-    : `קובץ ה-OPT הוא למטוס ${opt.ac}, ורישום המטוס לא נמצא בתדריך.`;
-  return { ok: true, ask, warn };
+  if (!reg) warn.push(`קובץ ה-OPT הוא למטוס ${opt.ac}, ורישום המטוס לא נמצא בתדריך.`);
+  else if (!reg.endsWith(opt.ac.toUpperCase())) warn.push(`קובץ ה-OPT הוא למטוס ${opt.ac}, והתדריך למטוס ${brief.reg}.`);
+  return { ask, warn: warn.length ? warn : null };
 }

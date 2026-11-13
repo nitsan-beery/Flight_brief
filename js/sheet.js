@@ -125,24 +125,25 @@ export function renderSheet(slot, brief, manual, on) {
     optMsg.hidden = false;
   };
   /**
-   * חלונית, באותו מסמך שבו הדפית מוצגת: "להחליף את ערכי ה-OPT?", או אזהרה על מטוס אחר עם "טען" ו"בטל"
-   * (גרסה 45). באזהרה המיקוד על "בטל", וסגירה בלי בחירה היא "בטל".
+   * חלונית, באותו מסמך שבו הדפית מוצגת: "להחליף את ערכי ה-OPT?", או אזהרה כתומה על קובץ שלא תואם
+   * לתדריך (שדה או מטוס), עם "טען" ו"בטל" (requirements.md, 5.1.3, גרסאות 45–46). באזהרה המיקוד על
+   * "בטל", וסגירה בלי בחירה היא "בטל".
    */
   const askOpt = (vals, warn) => new Promise((resolve) => {
     const doc = el.ownerDocument;
     doc.querySelector('#opt-dlg')?.remove();
     const dlg = doc.createElement('dialog');
     dlg.id = 'opt-dlg';
-    dlg.className = 'dlg';
+    dlg.className = warn ? 'dlg dlg-warn' : 'dlg';
     dlg.dir = 'rtl';
     dlg.innerHTML = warn
-      ? `<form method="dialog"><h2 class="dlg-title dlg-warn">אזהרה: מטוס אחר</h2><p class="dlg-q"></p>
+      ? `<form method="dialog"><h2 class="dlg-title">אזהרה: הקובץ לא תואם לתדריך</h2><p class="dlg-q"></p>
         ${vals ? '<p class="dlg-sub">ערכי ה-OPT יוחלפו:</p><div class="dlg-vals" dir="ltr"></div>' : ''}
         <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri">טען</button><button value="no" autofocus>בטל</button></div></form>`
       : `<form method="dialog"><h2 class="dlg-title">להחליף את ערכי ה-OPT?</h2>
         <div class="dlg-vals" dir="ltr"></div>
         <div class="dlg-actions" style="margin-top:16px"><button value="yes" class="pri" autofocus>החלף</button><button value="no">בטל</button></div></form>`;
-    if (warn) dlg.querySelector('.dlg-q').textContent = warn;
+    if (warn) dlg.querySelector('.dlg-q').textContent = warn.join('\n');
     if (vals) dlg.querySelector('.dlg-vals').textContent = vals.join('\n');
     dlg.addEventListener('close', () => { resolve(dlg.returnValue === 'yes'); dlg.remove(); });
     doc.body.append(dlg);
@@ -164,7 +165,6 @@ export function renderSheet(slot, brief, manual, on) {
     const r = await on.readOpt(file);
     if (!r.ok) { showOpt(r.error, true); return; }
     const plan = planOpt(r.opt, brief, manual);
-    if (!plan.ok) { showOpt(plan.error, true); return; }
     optMsg.hidden = true;
     if ((!plan.ask && !plan.warn) || await askOpt(plan.ask, plan.warn)) applyOpt(r.opt);
   };

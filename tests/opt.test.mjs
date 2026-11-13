@@ -34,21 +34,16 @@ test('חסרות מהירויות: נדחה, בלי ניחוש', () => {
 const opt = parseOpt(GOOD).opt;
 const empty = { flap: '', n1: '', v1: '', vr: '', v2: '', cg: '24.5' };
 
-test('שדה המראה שונה משדה המוצא: לא נטען', () => {
-  const r = planOpt(opt, { org: 'LLBG' }, empty);
-  assert.equal(r.ok, false);
-  assert.match(r.error, /EDDF.*LLBG/);
-});
+const same = { org: 'EDDF', reg: '4XXYZ' };
 
-test('שדות ריקים: נטען בלי שאלה', () => {
-  const r = planOpt(opt, { org: 'EDDF' }, empty);
-  assert.equal(r.ok, true);
-  assert.equal(r.ask, null);
+test('שדות ריקים, אותו שדה ומטוס: נטען בלי שאלה', () => {
+  assert.deepEqual(planOpt(opt, same, empty), { ask: null, warn: null });
 });
 
 test('כבר יש ערכים: שאלה עם קיים וחדש', () => {
-  const r = planOpt(opt, { org: 'EDDF' }, { ...empty, n1: '93.0', v1: '140' });
+  const r = planOpt(opt, same, { ...empty, n1: '93.0', v1: '140' });
   assert.deepEqual(r.ask, ['FLAPS — → 5', 'N1 93.0 → 94.2', 'V1 140 → 142', 'VR — → 147', 'V2 — → 153']);
+  assert.equal(r.warn, null);
 });
 
 test('בלי FLAP: נדחה', () => {
@@ -57,21 +52,26 @@ test('בלי FLAP: נדחה', () => {
   assert.match(r.error, /FLAPS/);
 });
 
-test('אותו מטוס: בלי אזהרה', () => {
-  assert.equal(planOpt(opt, { org: 'EDDF', reg: '4XXYZ' }, empty).warn, null);
+test('שדה אחר: אזהרה, לא דחייה (גרסה 46)', () => {
+  const r = planOpt(opt, { ...same, org: 'LLBG' }, empty);
+  assert.equal(r.warn.length, 1);
+  assert.match(r.warn[0], /EDDF.*LLBG/);
 });
 
-test('מטוס אחר: אזהרה, והנתונים לא נדחים (גרסה 45)', () => {
-  const r = planOpt(opt, { org: 'EDDF', reg: '4XABC' }, { ...empty, n1: '93.0' });
-  assert.equal(r.ok, true);
-  assert.match(r.warn, /XYZ.*4XABC/);
+test('מטוס אחר: אזהרה (גרסה 45)', () => {
+  const r = planOpt(opt, { ...same, reg: '4XABC' }, { ...empty, n1: '93.0' });
+  assert.equal(r.warn.length, 1);
+  assert.match(r.warn[0], /XYZ.*4XABC/);
   assert.ok(r.ask);
 });
 
-test('בלי רישום בתדריך: אזהרה, בלי ניחוש', () => {
-  assert.match(planOpt(opt, { org: 'EDDF', reg: '' }, empty).warn, /לא נמצא/);
+test('שדה ומטוס אחרים: שתי שורות באותה אזהרה', () => {
+  const r = planOpt(opt, { org: 'LLBG', reg: '4XABC' }, empty);
+  assert.equal(r.warn.length, 2);
+  assert.match(r.warn[0], /LLBG/);
+  assert.match(r.warn[1], /4XABC/);
 });
 
-test('שדה שונה: נדחה לפני בדיקת המטוס', () => {
-  assert.equal(planOpt(opt, { org: 'LLBG', reg: '4XABC' }, empty).ok, false);
+test('בלי רישום בתדריך: אזהרה, בלי ניחוש', () => {
+  assert.match(planOpt(opt, { ...same, reg: '' }, empty).warn[0], /לא נמצא/);
 });
