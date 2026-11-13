@@ -36,6 +36,7 @@ function notamItem(n, reason) {
   meta.dir = 'ltr';
   meta.append(el('span', null, n.id), el('span', null, validLabel(n.valid)));
   if (n.temporary) meta.append(el('span', 'nt-tmp', 'זמני'));
+  if (n.newPerm && !reason) meta.append(el('span', 'nt-tmp', 'PERM חדש'));
   if (reason) meta.append(el('span', 'nt-why', REASON_LABEL[reason] ?? reason));
   item.append(meta);
   if (reason) {

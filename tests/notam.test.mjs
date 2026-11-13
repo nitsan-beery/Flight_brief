@@ -36,7 +36,7 @@ function bulletin(entries) {
 }
 
 const run = (entries, ctx = ctx737()) => filterNotams(parseBulletin(bulletin(entries)).notams, ctx);
-const ALWAYS = '2701010000 - PERM';
+const ALWAYS = '2701010000 - UFN';
 
 test('תוקף: תאריכים, PERM, UFN ו-EST', () => {
   assert.deepEqual(parseValid('2703050600 - 2703050900'), { from: T('2703050600'), to: T('2703050900'), raw: '2703050600 - 2703050900' });
@@ -258,4 +258,15 @@ test('סוג מטוס לא מזוהה: אזהרה, ובלי כללי מטוס', 
   assert.ok(c.warnings.some((w) => w.includes('A320')));
   const r = run([['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A1/27', ALWAYS, ['IAC RNP RWY 25C: LPV OCA/H CHANGED']]], c);
   assert.equal(r[0].shown, true);
+});
+
+test('PERM ותיק מ-56 יום מוסתר; PERM חדש מוצג עם תגית; UFN נשאר', () => {
+  // ‏STD ‏05/03/27 0800. ‏56 יום לפני: 08/01/27 0800.
+  const r = run([
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A1/27', '2701080759 - PERM', ['RWY 07C TORA 3800M']],
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A2/27', '2701080801 - PERM', ['RWY 07C TORA 3800M']],
+    ['DESTINATION AIRPORT', 'EDDF', 'RUNWAY', '1A3/27', '2601010000 - UFN', ['RWY 07C TORA 3800M']],
+  ]);
+  assert.deepEqual(r.map((n) => n.reason), ['perm', null, null]);
+  assert.deepEqual(r.map((n) => !!n.newPerm), [false, true, false]);
 });

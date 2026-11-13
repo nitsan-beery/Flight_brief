@@ -328,6 +328,8 @@ export function filterNotams(notams, ctx) {
   return notams.map((n) => decide(n, ctx));
 }
 
+const PERM_AGE = 56 * 24 * 3600 * 1000;
+
 function decide(n, ctx) {
   // שורות נשברות באמצע ביטוי (ICAO / CODE C), ולכן ההתאמה על הטקסט המחובר ברווח.
   const text = n.lines.join(' ');
@@ -351,6 +353,12 @@ function decide(n, ctx) {
       const clipped = hit.map((w) => ({ from: Math.max(w.from, n.valid.from), to: Math.min(w.to, n.valid.to ?? Infinity) }));
       if (!clipped.some((w) => scheduleHits(sched, w))) return hide('schedule');
     }
+  }
+
+  // ‏PERM ותיק – כבר בדפיות Jeppesen. חדש (עד שני מחזורי AIRAC) – מוצג עם תגית (5.3).
+  if (n.valid.open === 'PERM' && n.valid.from != null) {
+    if (ctx.std - n.valid.from > PERM_AGE) return hide('perm');
+    out.newPerm = true;
   }
 
   // נושאים.
@@ -497,6 +505,7 @@ export const REASON_LABEL = {
   mtow: 'MTOW מעל המטוס',
   cancel: 'ביטול מגבלה',
   navaid: 'עזר ניווט שאינו ILS',
+  perm: 'PERM ותיק (בדפיות Jeppesen)',
 };
 
 export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'Dest ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
