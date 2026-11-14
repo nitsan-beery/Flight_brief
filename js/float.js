@@ -267,14 +267,15 @@ function drawFull(canvas, brief, manual) {
 
   section('זמנים');
   row([{ l: 'STD – STA', v: `${v('std')} – ${v('sta')}`, f: 2, missing: f.std.missing || f.sta.missing }, { l: 'ETE', v: v('ete'), missing: f.ete.missing }]);
+  // צוות לפני דלק ומשקל (requirements.md, 5.1.1, גרסה 84).
+  section('צוות');
+  row([{ l: 'קבינה', lines: cab, f: cabW }, { l: 'קוקפיט', lines: ck, f: ckW }], 34 + crewRows * 24);
   section('דלק ומשקל');
   row([
     { l: 'T.F', v: v('tf'), missing: f.tf.missing },
     { l: 'T.O.W', v: v('tow'), missing: f.tow.missing },
     { l: `B.F (${plan ?? MISSING})`, v: bf, col: plan !== null && bfLow(bf, plan) ? c.bad : c.tx },
   ]);
-  section('צוות');
-  row([{ l: 'קבינה', lines: cab, f: cabW }, { l: 'קוקפיט', lines: ck, f: ckW }], 34 + crewRows * 24);
   section('Loadsheet');
   row([{ l: 'CG (MACTOW)', v: m('cg') }, { l: 'SOB', v: m('sob') }]);
   section('OPT');
