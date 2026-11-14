@@ -212,3 +212,5 @@ button:disabled{opacity:.4;cursor:default}
 .nt-card:not(.open) .nt-hd{border-bottom:none}
 .nt-card:not(.open)>:not(.nt-hd){display:none}
 .nt-cnt{font-size:12px;min-width:22px;text-align:center;padding:1px 7px;border-radius:10px;background:var(--card);color:var(--tx)}
+.nt-hidden-why{font-size:13px;color:var(--tx2);margin-top:2px;line-height:1.6}
+.nt-hidden-why b{font-weight:600;color:var(--tx)}

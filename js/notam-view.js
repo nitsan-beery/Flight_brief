@@ -181,14 +181,18 @@ function card(c, fleet) {
     const counts = {};
     for (const n of c.hidden) counts[n.reason] = (counts[n.reason] || 0) + 1;
     const det = el('details', 'nt-hidden');
-    // כל סיבה מבודדת (bdi), כדי שהמספר יופיע ליד הסיבה שלו גם כשהיא כוללת טקסט באנגלית: "PERM (…): 8 · סוג גישה לא מאושר: 3".
-    const sum = el('summary', null, `הוסתרו ${c.hidden.length}: `);
+    // כותרת "הוסתרו N", ומתחתיה הסיבות בשורה אחת: מספר מודגש ואחריו הסיבה, מופרדות בפסיק (אושר בהדמיה, גרסה 72).
+    // כל סיבה מבודדת (bdi), כדי שהמספר יישאר ליד הסיבה שלו גם כשיש בה טקסט באנגלית.
+    const sum = el('summary', null, `הוסתרו ${c.hidden.length}`);
+    const whyLine = el('div', 'nt-hidden-why');
     Object.entries(counts).forEach(([k, v], i) => {
-      if (i) sum.append(' · ');
-      const why = el('bdi', null, REASON_LABEL[k] ?? k);
+      if (i) whyLine.append(', ');
+      const why = el('bdi');
       why.dir = 'rtl';
-      sum.append(why, `: ${v}`);
+      why.append(el('b', null, String(v)), ` ${REASON_LABEL[k] ?? k}`);
+      whyLine.append(why);
     });
+    sum.append(whyLine);
     det.append(sum);
     det.addEventListener('toggle', () => {
       if (!det.open || det.dataset.built) return;
