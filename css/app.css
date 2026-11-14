@@ -223,3 +223,4 @@ main:has(#product-view:not([hidden]) [data-pane="notam"]:not([hidden])){max-widt
 .nt-card.sel{border-color:var(--ac)}
 @media (max-width:899px){.nt-split{display:block}.nt-mappane{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));height:40vh;height:40dvh;min-height:220px;margin-top:12px}}
 .nt-mapitem{cursor:pointer}
+.m-rwylb{fill:var(--tx);font-weight:700;text-anchor:middle;dominant-baseline:central}

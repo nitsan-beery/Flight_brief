@@ -211,6 +211,36 @@ const el = (tag, attrs, parent) => {
 const d = (p) => 'M' + p.map(([x, y]) => `${x} ${y}`).join('L');
 
 /**
+ * קצות המסלולים ושמותיהם: "10/28" – ‏10 בקצה שממנו הכיוון הוא כ-100°, ‏28 בקצה השני.
+ * כמה קטעים עם אותו שם (מסלול שמחולק ב-OSM) – הקצוות הרחוקים ביותר לאורך הציר.
+ * ux, uy: כיוון מהקצה לתוך המסלול (התווית נכתבת מעבר לקצה). שם שאינו מספר מסלול – בלי תווית.
+ */
+export function runwayEnds(rwys) {
+  const out = [];
+  const byRef = new Map();
+  for (const r of rwys) if (r.r) byRef.set(r.r, [...(byRef.get(r.r) ?? []), ...pts(r.p)]);
+  for (const [ref, p] of byRef) {
+    const names = ref.split('/');
+    const n0 = parseInt(names[0], 10);
+    if (names.length !== 2 || !(n0 >= 1 && n0 <= 36) || p.length < 2) continue;
+    // הציר: בין שתי הנקודות הרחוקות זו מזו.
+    let a = p[0], b = p[1], best = -1;
+    for (const q of p) for (const w of p) { const dd = (q[0] - w[0]) ** 2 + (q[1] - w[1]) ** 2; if (dd > best) { best = dd; a = q; b = w; } }
+    const len = Math.sqrt(best);
+    if (!len) continue;
+    const ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len;
+    // כיוון מ-a ל-b במעלות (x מזרחה, y דרומה).
+    const hdg = ((Math.atan2(ux, -uy) * 180) / Math.PI + 360) % 360;
+    const diff = Math.abs(((hdg - n0 * 10 + 540) % 360) - 180);
+    const [first, second] = diff < 90 ? [a, b] : [b, a];
+    const fx = (second[0] - first[0]) / len, fy = (second[1] - first[1]) / len;
+    out.push({ name: names[0], x: first[0], y: first[1], ux: fx, uy: fy });
+    out.push({ name: names[1], x: second[0], y: second[1], ux: -fx, uy: -fy });
+  }
+  return out;
+}
+
+/**
  * SVG של השדה, עם זום והזזה (5.3.3): צביטה וגרירה במגע, גלגלת וגרירה בעכבר.
  * מחזיר {svg, show(resolved, focus), zoomBy(factor), reset()}.
  * התוויות והנקודות המודגשות שומרות על גודל קבוע על המסך בכל זום.
@@ -228,7 +258,8 @@ export function drawMap(map) {
   for (const r of map.rwy) el('path', { d: d(pts(r.p)), class: 'm-rwy', 'stroke-width': r.w }, base);
   for (const t of map.twy) el('path', { d: d(pts(t.p)), class: 'm-twy' }, base);
   for (const s of map.stand) el('circle', { cx: s[1], cy: s[2], r: 5, class: 'm-stand' }, base);
-  const hl = el('g', {}, svg), lb = el('g', {}, svg);
+  const rl = el('g', {}, svg), hl = el('g', {}, svg), lb = el('g', {}, svg);
+  const ends = runwayEnds(map.rwy);
 
   let vb = [...full];
   let cur = { lines: [], dots: [], refs: [] };
@@ -251,6 +282,12 @@ export function drawMap(map) {
     const { s } = geom();
     hl.replaceChildren();
     lb.replaceChildren();
+    // שמות המסלולים בתחילתם, קצת מעבר לסף (גרסה 78).
+    rl.replaceChildren();
+    for (const e of ends) {
+      const off = 14 * s;
+      el('text', { x: e.x - e.ux * off, y: e.y - e.uy * off, 'font-size': 13 * s, class: 'm-rwylb' }, rl).textContent = e.name;
+    }
     for (const l of cur.lines) {
       // מסלול – ברוחב האמיתי (ועוד קצת); מסלול הסעה – 7 פיקסלים בכל זום.
       if (l.w) el('path', { d: d(l.pts), class: 'm-hl', 'stroke-width': Math.max(l.w + 8, 7 * s) }, hl);

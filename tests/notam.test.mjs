@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText, closuresOf, groupOf } from '../js/notam.js';
-import { resolve } from '../js/notam-map.js';
+import { resolve, runwayEnds } from '../js/notam-map.js';
 
 const T = (s) => Date.UTC(2000 + +s.slice(0, 2), +s.slice(2, 4) - 1, +s.slice(4, 6), +s.slice(6, 8), +s.slice(8, 10));
 
@@ -348,4 +348,20 @@ test('קבוצות: תאורה של מסלולי הסעה – הסעה; תאור
   assert.equal(g('RWY 22L SEQUENCED FLG LGT U/S', ['rwy', 'light']), 'apch');
   assert.equal(g('RWY 07C CLSD', ['rwy']), 'ad');
   assert.equal(g('AD CAT 6 FOR FIRE FIGHTING', ['rffs']), 'other');
+});
+
+test('מפה: שמות המסלולים בקצה הנכון', () => {
+  // ‏10/28 ממערב למזרח (x מזרחה): ‏10 בקצה המערבי. ‏16/34 מצפון לדרום (y דרומה), בשני קטעים: ‏16 בצפון.
+  const e = runwayEnds([
+    { r: '10/28', p: [0, 0, 1000, -100] },
+    { r: '16/34', p: [0, -500, 50, 0] },
+    { r: '16/34', p: [50, 0, 100, 500] },
+    { r: 'H1', p: [0, 0, 10, 10] },
+  ]);
+  const at = (n) => { const x = e.find((v) => v.name === n); return [x.x, x.y]; };
+  assert.deepEqual(at('10'), [0, 0]);
+  assert.deepEqual(at('28'), [1000, -100]);
+  assert.deepEqual(at('16'), [0, -500]);
+  assert.deepEqual(at('34'), [100, 500]);
+  assert.equal(e.length, 4);
 });
