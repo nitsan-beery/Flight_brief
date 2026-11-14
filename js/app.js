@@ -13,7 +13,7 @@ import { renderNotams } from './notam-view.js';
 import { ensureMaps } from './notam-map.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 76;
+const APP_VERSION = 77;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;

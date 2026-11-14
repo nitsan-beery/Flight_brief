@@ -202,13 +202,15 @@ function card(c, fleet, pane) {
     allBtn.title = 'מפת סגירות';
     hd.append(allBtn);
     allBtn.addEventListener('click', () => { setOpen(true); showAll(); });
-    for (const [n, item] of items) {
-      item.querySelector('.nt-pin').addEventListener('click', () => { select(item); pane.show(c, [n], true); });
-    }
+    // כשיש מפה לשדה: לחיצה בכל מקום ב-NOTAM עם סגירה (לא רק על הסמל) מתמקדת בו במפה (גרסה 77).
     hasMap(c.icao).then((ok) => {
       if (!ok) return;
       allBtn.hidden = false;
-      for (const [, item] of items) item.querySelector('.nt-pin').hidden = false;
+      for (const [n, item] of items) {
+        item.querySelector('.nt-pin').hidden = false;
+        item.classList.add('nt-mapitem');
+        item.addEventListener('click', () => { select(item); pane.show(c, [n], true); });
+      }
     });
   }
 
