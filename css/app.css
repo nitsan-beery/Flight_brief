@@ -173,6 +173,7 @@ button:disabled{opacity:.4;cursor:default}
 .nt-why{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--card);color:var(--tx2)}
 .nt-tx{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin-top:3px;text-align:left}
 .nt-tx mark{background:var(--warn-bg);color:inherit;border-radius:3px;padding:0 2px;outline:1px solid var(--warn)}
+.nt-tx mark:not(.nt-proc){white-space:nowrap}
 .nt-tx mark.nt-proc{background:color-mix(in srgb,var(--ac) 14%,transparent);color:var(--ac);outline:0;font-weight:600}
 .nt-empty{font-size:14px;color:var(--tx2);padding:10px 14px;margin:0}
 .nt-hidden{border-top:1px solid var(--ln);font-size:13px;color:var(--tx2)}

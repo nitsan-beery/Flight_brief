@@ -28,7 +28,9 @@ function notamText(n) {
     let at = 0;
     for (const [a, b, kind] of [...s.marks].sort((x, y) => x[0] - y[0])) {
       if (a < at) continue;
-      box.append(s.text.slice(at, a), el('mark', kind === 'proc' ? 'nt-proc' : null, s.text.slice(a, b)));
+      // ערך בצהוב לא נשבר בין שורות (nowrap ב-CSS), ולכן ירידת שורה בתוכו הופכת לרווח (5.3.2, כלל 3).
+      const t = s.text.slice(a, b);
+      box.append(s.text.slice(at, a), kind === 'proc' ? el('mark', 'nt-proc', t) : el('mark', null, t.replace(/\s*\n\s*/g, ' ')));
       at = b;
     }
     box.append(s.text.slice(at));
