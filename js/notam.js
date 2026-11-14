@@ -427,6 +427,12 @@ function apchCats(text) {
 
 const RFFS_CAT = /\bCAT(?:EGORY)? ?(\d{1,2})\b/g;
 
+// הדגשות ב-NOTAM גישה (5.3.2, כלל 3). צהוב: ערך שחל על כל הקטגוריות. כחול: שם הנוהל וסוג המינימה.
+const VALUE_ALL = /\bFROM\s+[^,\n]*?\s+BECOMES\s+[^,\n]*/g;
+// רווח בתוך השם יכול להיות גם ירידת שורה (`ILS Y CAT I OR LOC Y RWY` ואז `36C`).
+const PROC_NAME = /\b(?:ILS(?:\s[A-Z])?(?:\sCAT\sI{1,3})?(?:\sOR\sLOC(?:\s[A-Z])?)?|LOC(?:\s[A-Z])?|RNAV\s?\(RNP\)(?:\s[A-Z])?|RNAV(?:\s[A-Z])?|RNP(?:\sAR)?(?:\s[A-Z])?|VOR\/DME(?:\s[A-Z])?|VOR(?:\s[A-Z])?|NDB(?:\s[A-Z])?|GLS(?:\s[A-Z])?|LDA(?:\s[A-Z])?)\sRWY\s?\d{1,2}[LRC]?(?:\/\d{2}[LRC]?)?\b/g;
+const MIN_TYPE = /(?<!\bTHE\s)\b(?:(?:LNAV\/VNAV|LNAV|LPV|LP)\s)?OCA\s?\/?\s?\((?:OCH|H)\)|(?<!\bTHE\s)\bOCA\/H\b|\b(?:LNAV\/VNAV|LNAV|LPV)\b/g;
+
 /**
  * חלוקת הטקסט לקטעים (משפטים). requirements.md 5.3.2, כלל 1.
  * גבול: אחרי נקודה שאחריה רווח או סוף שורה (לא נקודה עשרונית), ולפני שורה שמתחילה ב-"-", "1." או "a)".
@@ -556,10 +562,19 @@ function decide(n, ctx) {
     const mine = exc ? exc.apchCat : f.apchCat;
     const { cats, all } = apchCats(text);
     if (cats.size && !all && !cats.has(mine)) return hide('apch-cat');
-    const own = new RegExp(`\\bCAT(?:EGORY|S)? ?(?:[A-E](?:/| ?, ?| AND | ?- ?))*${mine}(?:(?:/| ?- ?| AND )DL)?\\b[^,\\n]*(?:\\n\\d[^,\\n]*)?`, 'g');
+    // ממשיך לשורה הבאה רק כשאחרי הקטגוריה אין כלום עד סוף השורה (`CAT D` ואז `102.`).
+    const own = new RegExp(`\\bCAT(?:EGORY|S)? ?(?:[A-E](?:/| ?, ?| AND | ?- ?))*${mine}(?:(?:/| ?- ?| AND )DL)?\\b(?:[ \\t]*\\n\\d[^,\\n]*|[^,\\n]*)`, 'g');
+    const mark = (seg, re, kind, keep = () => true) => {
+      for (const m of seg.text.matchAll(re)) if (keep(m)) seg.marks.push([m.index, m.index + m[0].replace(/[\s.]+$/, '').length, kind]);
+    };
+    // ערך בלי CAT באותה שורה – חל על כל הקטגוריות.
+    const noCat = (seg) => (m) => !/\bCAT\b/.test(seg.text.slice(seg.text.lastIndexOf('\n', m.index) + 1, m.index));
     for (const seg of out.segments) {
       if (seg.omit) continue;
-      for (const m of seg.text.matchAll(own)) seg.marks.push([m.index, m.index + m[0].replace(/[\s.]+$/, '').length]);
+      mark(seg, own, 'val');
+      mark(seg, VALUE_ALL, 'val', noCat(seg));
+      mark(seg, PROC_NAME, 'proc');
+      mark(seg, MIN_TYPE, 'proc');
     }
   }
 

@@ -19,16 +19,16 @@ const el = (tag, cls, text) => {
   return e;
 };
 
-/** הטקסט של NOTAM: בלי הקטעים המושמטים, עם <mark> על הערך של הקטגוריה. */
+/** הטקסט של NOTAM: בלי הקטעים המושמטים, עם <mark> על הערך של המטוס, ו-<mark class="nt-proc"> על שם הנוהל וסוג המינימה. */
 function notamText(n) {
   const box = el('div', 'nt-tx');
   box.dir = 'ltr';
   for (const s of n.segments) {
     if (s.omit) continue;
     let at = 0;
-    for (const [a, b] of [...s.marks].sort((x, y) => x[0] - y[0])) {
+    for (const [a, b, kind] of [...s.marks].sort((x, y) => x[0] - y[0])) {
       if (a < at) continue;
-      box.append(s.text.slice(at, a), el('mark', null, s.text.slice(a, b)));
+      box.append(s.text.slice(at, a), el('mark', kind === 'proc' ? 'nt-proc' : null, s.text.slice(a, b)));
       at = b;
     }
     box.append(s.text.slice(at));

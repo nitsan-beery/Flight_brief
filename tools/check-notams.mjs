@@ -3,7 +3,7 @@
 // התדריכים לא נכנסים לריפו (CLAUDE.md). ברירת המחדל היא תיקיית הדוגמאות ב-OneDrive.
 //
 // הרצה:  node tools/check-notams.mjs [תיקייה] [--shown] [--hidden] [--only=LY347]
-//   --shown   ה-NOTAM המוצגים במלואם. [✂ ...] קטע מושמט (גישה לא מאושרת), «...» טקסט מובלט
+//   --shown   ה-NOTAM המוצגים במלואם. [✂ ...] קטע מושמט (גישה לא מאושרת), «...» טקסט מובלט, ‹...› שם נוהל וסוג מינימה
 //   --hidden  רשימת ה-NOTAM שהוסתרו בשדות רלוונטיים, עם הסיבה
 //   --closures  הסגירות למפה (5.3.3) והתאמתן לקובץ המפה של השדה (data/maps)
 
@@ -72,7 +72,7 @@ for (const f of files) {
       const body = n.segments.map((s) => {
         if (s.omit) return `[✂ ${s.flat}]${/\n/.test(s.text) ? '\n' : ' '}`;
         let t = s.text;
-        for (const [a, b] of [...s.marks].sort((x, y) => y[0] - x[0])) t = `${t.slice(0, a)}«${t.slice(a, b)}»${t.slice(b)}`;
+        for (const [a, b, k] of [...s.marks].sort((x, y) => y[0] - x[0])) t = k === 'proc' ? `${t.slice(0, a)}‹${t.slice(a, b)}›${t.slice(b)}` : `${t.slice(0, a)}«${t.slice(a, b)}»${t.slice(b)}`;
         return t;
       }).join('');
       for (const l of body.split('\n')) if (l.trim()) console.log(`              ${l.trim()}`);

@@ -235,10 +235,30 @@ test('כלל 3: קטגוריית גישה – הבלטה, והסתרה רק כש
     ['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A3/27', ALWAYS, ['ILS RWY 25C DA 382 ALL CATS']],
   ]);
   assert.deepEqual(r.map((n) => n.reason), ['apch-cat', null, null]);
-  const marked = (n) => n.segments.flatMap((s) => s.marks.map(([a, b]) => s.text.slice(a, b)));
   assert.deepEqual(marked(r[1]), ['CAT D-DL 1010']);
+  assert.deepEqual(marked(r[1], 'proc'), ['VOR RWY 25C']);
   const r2 = run([['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A4/27', ALWAYS, ['NEW OCH: CAT A 67, CAT C 87, CAT D 103, CAT DL 108', 'CAT A/B/C/D 1602 (200), CAT D', '102.']]]);
   assert.deepEqual(marked(r2[0]), ['CAT D 103', 'CAT A/B/C/D 1602 (200)', 'CAT D\n102']);
+});
+
+const marked = (n, kind = 'val') => n.segments.flatMap((s) => s.marks.filter((m) => m[2] === kind).map(([a, b]) => s.text.slice(a, b)));
+
+test('כלל 3: ערך בלי CAT, שם הנוהל וסוג המינימה', () => {
+  const [n] = run([['DESTINATION AIRPORT', 'EDDF', 'APPROACH PROCEDURE', '1A5/27', ALWAYS, [
+    'THE OCA /(OCH) OF THE AIP AD 2 EDDF IAC RNP RWY 04',
+    'REVISED AS BELOW:',
+    '1.LNAV/VNAV OCA/(OCH)',
+    'CAT C FROM 300/(289) BECOMES 330/(319)',
+    'CAT D FROM 310/(299) BECOMES 340/(329)',
+    '2.LNAV OCA/(OCH)',
+    'FROM 390/(379) BECOMES 430/(419)',
+    '3. IAC VOR/DME S RWY 22 OCA/(OCH) FROM',
+    '370/(359) BECOMES 390/(379)',
+    '4. IAC ILS Y CAT I OR',
+    'LOC Y RWY 36C',
+  ]]]);
+  assert.deepEqual(marked(n), ['CAT D FROM 310/(299) BECOMES 340/(329)', 'FROM 390/(379) BECOMES 430/(419)', 'FROM\n370/(359) BECOMES 390/(379)']);
+  assert.deepEqual(marked(n, 'proc'), ['RNP RWY 04', 'LNAV/VNAV OCA/(OCH)', 'LNAV OCA/(OCH)', 'VOR/DME S RWY 22', 'OCA/(OCH)', 'ILS Y CAT I OR\nLOC Y RWY 36C']);
 });
 
 test('חריג LFLB: ‏4X-EKH הוא CAT C שם', () => {
