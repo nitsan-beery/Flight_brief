@@ -578,9 +578,9 @@ function decide(n, ctx) {
 /** סדר הכרטיסים לפי התפקיד הראשון של השדה. */
 const ROLE_ORDER = ['DEP', 'DEST', 'ALTN', 'ERA', 'TO_ALTN', 'EDTO'];
 /** סדר הקבוצות בתוך כרטיס. */
-// הסדר והכותרות נקבעו על ידי הבעלים (גרסה 68). ‏RFFS בתוך "אחר".
-export const GROUPS = ['ad', 'rwy', 'taxi', 'apch', 'proc', 'other', 'company'];
-export const GROUP_LABEL = { ad: 'שדה', rwy: 'מסלולי המראה ונחיתה', taxi: 'מסלולי הסעה וחניות', apch: 'מינימות', proc: 'SID/STAR', other: 'אחר', company: 'Company Notams' };
+// הסדר והכותרות נקבעו על ידי הבעלים (גרסאות 68–69). מסלולים בתוך "שדה", ‏RFFS בתוך "אחר".
+export const GROUPS = ['ad', 'taxi', 'apch', 'proc', 'other', 'company'];
+export const GROUP_LABEL = { ad: 'שדה', taxi: 'מסלולי הסעה וחניות', apch: 'מינימות', proc: 'SID/STAR', other: 'אחר', company: 'Company Notams' };
 
 const AD_STRONG = /\bAD(?: [A-Z]{4})? (?:CLSD|CLOSED|NOT AVBL)\b|\bAERODROME (?:CLSD|CLOSED)\b|\bAD (?:HR|HOURS|OPR|OPS)\b|\bOPR HR|OPERATING HOURS|HOURS OF (?:OPERATION|SERVICE)|CLSD TO ALL|NOT (?:TO BE )?PLANNED AS (?:ALTN|ALTERNATE)/;
 const APCH_WORDS = /\bIAP\b|\bIAC\b|\bAPCH\b|\bAPPROACH|\bMINIMA\b|\bMINIMUMS?\b|\bOCA|\bOCH\b|\bMDA\b|\bD[AH]\b|\bILS\b|\bLOC\b|\bGP\b|GLIDE|\bPAPI\b|\bALSF?\b|\bCIRCLING\b|\bMISSED\b|\bRNP\b|\bLNAV|\bLGT|\bLIGHT/;
@@ -598,7 +598,7 @@ export function groupOf(n) {
   if (/^(?:TWYS?|TAXIWAY|TXL|APN|APRON|(?:ACFT )?STANDS?|AFTER LDG)\b/.test(first)) return 'taxi';
   if (APCH_WORDS.test(text)) return 'apch';
   if ((s.has('twy') || s.has('stand')) && !/^RWYS?\b/.test(first)) return 'taxi';
-  if (s.has('rwy')) return 'rwy';
+  if (s.has('rwy')) return 'ad';
   if (s.has('sid') || s.has('star')) return 'proc';
   if (s.has('ad')) return 'ad';
   return 'other';
