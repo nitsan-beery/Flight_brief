@@ -480,10 +480,12 @@ function decide(n, ctx) {
   const out = { ...n, shown: true, reason: null, subjects: [], roles: [], segments: segmentsOf(n.lines) };
   const hide = (reason) => ({ ...out, shown: false, reason });
   if (n.kind === 'fir') return hide('fir');
-  if (n.cat === 'COMPANY NOTAM' || /^CO\d+\/\d{2}$/.test(n.id)) return hide('company');
+  const company = n.cat === 'COMPANY NOTAM' || /^CO\d+\/\d{2}$/.test(n.id);
   const ap = ctx.airports.get(n.place);
-  if (!ap) return hide('airport');
+  if (!ap) return hide(company ? 'company' : 'airport');
   out.roles = ap.roles.map((r) => r.role);
+  // ‏NOTAM של החברה בשדה רלוונטי: תמיד, בלי שום סינון (5.3, נקבע על ידי הבעלים).
+  if (company) return { ...out, company: true };
 
   // חלון זמן: תוקף שחופף לחלון של אחד התפקידים. חלון לא ידוע – לא מסננים לפי זמן.
   const windows = ap.roles.map((r) => r.window);
@@ -575,8 +577,8 @@ function decide(n, ctx) {
 /** סדר הכרטיסים לפי התפקיד הראשון של השדה. */
 const ROLE_ORDER = ['DEP', 'DEST', 'ALTN', 'ERA', 'TO_ALTN', 'EDTO'];
 /** סדר הקבוצות בתוך כרטיס. */
-export const GROUPS = ['ad', 'rwy', 'apch', 'proc', 'taxi', 'rffs', 'other'];
-export const GROUP_LABEL = { ad: 'סגירה ושעות', rwy: 'מסלולים', apch: 'גישה, מינימות ותאורה', proc: 'SID ו-STAR', taxi: 'הסעה וחניה', rffs: 'RFFS', other: 'אחר' };
+export const GROUPS = ['company', 'ad', 'rwy', 'apch', 'proc', 'taxi', 'rffs', 'other'];
+export const GROUP_LABEL = { company: 'NOTAM של החברה', ad: 'סגירה ושעות', rwy: 'מסלולים', apch: 'גישה, מינימות ותאורה', proc: 'SID ו-STAR', taxi: 'הסעה וחניה', rffs: 'RFFS', other: 'אחר' };
 
 const AD_STRONG = /\bAD(?: [A-Z]{4})? (?:CLSD|CLOSED|NOT AVBL)\b|\bAERODROME (?:CLSD|CLOSED)\b|\bAD (?:HR|HOURS|OPR|OPS)\b|\bOPR HR|OPERATING HOURS|HOURS OF (?:OPERATION|SERVICE)|CLSD TO ALL|NOT (?:TO BE )?PLANNED AS (?:ALTN|ALTERNATE)/;
 const APCH_WORDS = /\bIAP\b|\bIAC\b|\bAPCH\b|\bAPPROACH|\bMINIMA\b|\bMINIMUMS?\b|\bOCA|\bOCH\b|\bMDA\b|\bD[AH]\b|\bILS\b|\bLOC\b|\bGP\b|GLIDE|\bPAPI\b|\bALSF?\b|\bCIRCLING\b|\bMISSED\b|\bRNP\b|\bLNAV|\bLGT|\bLIGHT/;
@@ -586,6 +588,7 @@ export function groupOf(n) {
   const text = n.lines.join(' ');
   const first = n.lines[0] || '';
   const s = new Set(n.subjects);
+  if (n.company) return 'company';
   // ‏PPR לבד (למשל "FOR LOWER MINIMA PPR FOCA") אינו סגירה: רק ניסוח חד-משמעי.
   if (AD_STRONG.test(text)) return 'ad';
   if ((s.has('sid') || s.has('star')) && (n.cat === 'SID/STAR' || /^(?:SID|STAR)\b/.test(first))) return 'proc';
@@ -637,7 +640,7 @@ export function analyzeBrief(pages, brief) {
 
 export const REASON_LABEL = {
   fir: 'NOTAM לפי FIR',
-  company: 'NOTAM של החברה',
+  company: 'NOTAM של החברה בשדה שאינו רלוונטי',
   airport: 'שדה לא רלוונטי',
   time: 'מחוץ לחלון הזמן',
   schedule: 'לוח הזמנים מחוץ לחלון',

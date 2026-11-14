@@ -119,15 +119,22 @@ test('פירוק הבולטין: מקטעים, שדות, FIR וקטגוריות;
   assert.equal(parseBulletin(['שום דבר']).ok, false);
 });
 
-test('שדות לא רלוונטיים, FIR ו-NOTAM של החברה מוסתרים', () => {
+test('שדות לא רלוונטיים ו-FIR מוסתרים; NOTAM של החברה – רק בשדה רלוונטי, ושם בלי סינון', () => {
   const r = run([
     ['ENROUTE AIRPORT(S)', 'LIMC', 'RUNWAY', '1A1/27', ALWAYS, ['RWY 17L CLSD']],
     ['AREA ENROUTE DEPARTURE - DESTINATION', 'LCCC NICOSIA FIR', null, '1A2/27', ALWAYS, ['RWY X']],
     ['DESTINATION AIRPORT', 'EDDF', 'COMPANY NOTAM', 'CO5/26', ALWAYS, ['CO5/26 COMPANY NOTAM', 'RWY 18 NOTE']],
     ['FUEL ENROUTE AIRPORT', 'LGAV', 'RUNWAY', '1A3/27', ALWAYS, ['RWY 03L CLSD']],
+    ['ENROUTE AIRPORT(S)', 'LIMC', 'COMPANY NOTAM', 'CO6/26', ALWAYS, ['CO6/26 COMPANY NOTAM', 'AD APPROVED']],
+    // בלי סינון: מחוץ לחלון הזמן, PERM ותיק, LPV, נושא לא רלוונטי, Code של מטוס אחר.
+    ['DESTINATION AIRPORT', 'EDDF', 'COMPANY NOTAM', 'CO7/26', '2601010000 - 2601020000', ['CO7/26 COMPANY NOTAM', 'GPU NOT AVBL']],
+    ['DESTINATION AIRPORT', 'EDDF', 'COMPANY NOTAM', 'CO8/26', '2401010000 - PERM', ['CO8/26 COMPANY NOTAM', 'RNP RWY 07 LPV ONLY FOR ACFT GREATER THAN CODE E']],
   ]);
-  assert.deepEqual(r.map((n) => n.reason), ['airport', 'fir', 'company', null]);
+  assert.deepEqual(r.map((n) => n.reason), ['airport', 'fir', null, null, 'company', null, null]);
   assert.deepEqual(r[3].roles, ['ERA']);
+  assert.equal(r[2].company, true);
+  assert.equal(r[6].lines.join(' '), 'CO8/26 COMPANY NOTAM RNP RWY 07 LPV ONLY FOR ACFT GREATER THAN CODE E');
+  assert.ok(r[6].segments.every((x) => !x.omit));
 });
 
 test('חלון זמן ולוח זמנים', () => {
