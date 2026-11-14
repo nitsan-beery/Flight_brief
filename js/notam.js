@@ -661,4 +661,4 @@ export const REASON_LABEL = {
 /** התווית של תפקיד בכרטיס: "ERA 3%" עם האחוז מעמוד 1. */
 export const roleLabel = (r) => (r.pct ? `${ROLE_LABEL[r.role]} ${r.pct}%` : ROLE_LABEL[r.role]);
 
-export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'Dest ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
+export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
