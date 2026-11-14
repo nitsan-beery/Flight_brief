@@ -182,7 +182,7 @@ button:disabled{opacity:.4;cursor:default}
 .nt-mapbtn{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:13px;padding:3px 10px;border-radius:8px;border:1px solid var(--ln);background:var(--card);color:var(--ac);cursor:pointer}
 .nt-pin{margin-inline-start:auto;display:inline-flex;padding:2px 6px;border-radius:7px;border:1px solid var(--ln);background:var(--card);color:var(--tx2);cursor:pointer}
 .nt-mapbtn svg,.nt-pin svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.nt.on{background:var(--card)}
+.nt.on{background:color-mix(in srgb,var(--ac) 14%,var(--sheet))}
 .nt.on .nt-pin{color:var(--ac);border-color:var(--ac)}
 .nt-closed{font-size:11px;padding:0 6px;border-radius:6px;color:var(--bad);border:1px solid var(--bad)}
 .nt-svg text{direction:ltr;font-weight:600;paint-order:stroke;stroke:var(--sheet);stroke-width:.22em}
