@@ -10,9 +10,10 @@ import { loadCurrent, saveCurrent, getSetting, putSetting, deleteSetting } from 
 import * as cal from './calendar.js';
 import { analyzeBrief } from './notam.js';
 import { renderNotams } from './notam-view.js';
+import { ensureMaps } from './notam-map.js';
 
 // מספר הגרסה. תמיד שווה למספר שב-CACHE ב-sw.js (CLAUDE.md).
-const APP_VERSION = 62;
+const APP_VERSION = 63;
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -204,13 +205,26 @@ async function analyzeNotams() {
   }
 }
 
-async function renderNotamView() {
-  const slot = $('#notam-slot');
-  if (!current.bytes) { slot.replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: 'התדריך הועבר מהעתקה, בלי קובץ PDF, ולכן אין ממנו NOTAM. טען את קובץ התדריך.' })); return; }
+/** מתחיל את ניתוח ה-NOTAM של התדריך הפתוח (פעם אחת לכל קובץ). */
+function startNotams() {
   const bytes = current.bytes;
   if (notamCache.bytes !== bytes) {
     notamCache = { bytes, res: null, busy: analyzeNotams().catch(() => ({ ok: false, error: 'לא ניתן לקרוא את ה-NOTAM מקובץ התדריך.' })) };
   }
+  return notamCache.busy;
+}
+
+/** מפות השדות של התדריך (5.3.3): ניתוח ברקע, והורדה של המפות לשדות הרלוונטיים כשיש רשת. */
+function prefetchMaps() {
+  if (!current?.bytes) return;
+  startNotams().then((res) => { if (res.ok) return ensureMaps([...res.ctx.airports.keys()]); }).catch(() => {});
+}
+
+async function renderNotamView() {
+  const slot = $('#notam-slot');
+  if (!current.bytes) { slot.replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: 'התדריך הועבר מהעתקה, בלי קובץ PDF, ולכן אין ממנו NOTAM. טען את קובץ התדריך.' })); return; }
+  const bytes = current.bytes;
+  startNotams();
   if (!notamCache.res) {
     slot.replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: 'קורא את ה-NOTAM מהתדריך…' }));
     const res = await notamCache.busy;
@@ -267,6 +281,7 @@ async function loadFile(file, pending = null) {
     await saveCurrent(current).catch(() => {});
     float.update();
     renderHome();
+    prefetchMaps();
     // טיסה אחרת (הצוות התאפס): השמות מהיומן. אותה טיסה: השמות הקיימים נשארים (requirements.md, 3.3).
     if (calSetting && crewEmpty(manual)) await fillFromCalendar(pending);
   } finally {
@@ -532,6 +547,7 @@ async function start() {
   const saved = await loadCurrent();
   if (saved?.brief && saved.manual) current = { fileName: saved.fileName, bytes: saved.bytes, brief: saved.brief, manual: saved.manual };
   route();
+  prefetchMaps();
   wireIncoming();
 }
 

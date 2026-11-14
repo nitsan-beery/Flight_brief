@@ -4,17 +4,80 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 
+// ---------- טעינה לפי תדריך (5.3.3) ----------
+// המפות לא באפליקציה עצמה: יורדות לשדות של התדריך מאתר האפליקציה, ונשמרות ב-IndexedDB לטיסה בלי רשת.
+// באפליקציית ה-iOS הדף לא מ-GitHub Pages, ולכן כתובת מלאה (האתר שולח Access-Control-Allow-Origin: *).
+const SITE = 'https://nitsan-beery.github.io/Flight_brief/';
+const url = (path) => (/^https?:$/.test(location.protocol) ? path : SITE + path);
+const KEEP_DAYS = 60;
+
+let dbP = null;
+function db() {
+  dbP ??= new Promise((resolve, reject) => {
+    const req = indexedDB.open('flight-brief-maps', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('maps', { keyPath: 'icao' });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbP;
+}
+async function tx(mode, fn) {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const t = d.transaction('maps', mode);
+    const r = fn(t.objectStore('maps'));
+    t.oncomplete = () => resolve(r?.result);
+    t.onerror = () => reject(t.error);
+  });
+}
+const getRec = (icao) => tx('readonly', (s) => s.get(icao)).catch(() => null);
+const putRec = (rec) => tx('readwrite', (s) => s.put(rec)).catch(() => {});
+
 let indexP = null;
-/** השדות שיש להם מפה: {ICAO: תאריך}. */
-export function mapIndex() {
-  indexP ??= fetch('data/maps/index.json').then((r) => (r.ok ? r.json() : { maps: {} })).then((j) => j.maps ?? {}).catch(() => ({}));
+/** רשימת המפות באתר: {ICAO: תאריך}, או null בלי רשת. פעם אחת לכל הפעלה. */
+function siteIndex() {
+  indexP ??= fetch(url('data/maps/index.json'), { cache: 'no-cache' })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((j) => j.maps ?? {})
+    .catch(() => { indexP = null; return null; });
   return indexP;
 }
 
-const cache = new Map();
-export function loadMap(icao) {
-  if (!cache.has(icao)) cache.set(icao, fetch(`data/maps/${icao}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null));
-  return cache.get(icao);
+/** מוריד ושומר את המפות של השדות (רק חסרות או שהתעדכנו). בלי רשת – לא עושה כלום. */
+export async function ensureMaps(icaos) {
+  const idx = await siteIndex();
+  if (!idx) return;
+  const now = Date.now();
+  for (const icao of new Set(icaos)) {
+    const have = await getRec(icao);
+    if (!idx[icao]) continue;
+    if (have?.date === idx[icao]) { await putRec({ ...have, used: now }); continue; }
+    try {
+      const r = await fetch(url(`data/maps/${icao}.json`), { cache: 'no-cache' });
+      if (r.ok) await putRec({ icao, date: idx[icao], used: now, map: await r.json() });
+    } catch { /* בלי רשת באמצע – נשאר מה שיש */ }
+  }
+  // ניקוי: מפה שלא נעשה בה שימוש 60 יום.
+  tx('readwrite', (s) => {
+    s.openCursor().onsuccess = (e) => {
+      const c = e.target.result;
+      if (!c) return;
+      if (now - (c.value.used ?? 0) > KEEP_DAYS * 864e5) c.delete();
+      c.continue();
+    };
+  }).catch(() => {});
+}
+
+/** המפה של השדה מהמכשיר (ואם אין – ניסיון להוריד), או null. */
+export async function loadMap(icao) {
+  let rec = await getRec(icao);
+  if (!rec) { await ensureMaps([icao]); rec = await getRec(icao); }
+  return rec?.map ?? null;
+}
+
+/** האם יש מפה לשדה (במכשיר, או שהורדה עכשיו). */
+export async function hasMap(icao) {
+  return !!(await loadMap(icao));
 }
 
 /** שם להשוואה: אותיות גדולות, רווח אחד, בלי אפסים מובילים במספר (X04 = X4). */

@@ -3,7 +3,7 @@
 // הלוגיקה עצמה ב-notam.js. כאן רק בניית ה-DOM, עם textContent (בלי HTML מהתדריך).
 
 import { GROUPS, GROUP_LABEL, groupOf, validLabel, hhColon, REASON_LABEL, ROLE_LABEL } from './notam.js';
-import { mapIndex, loadMap, drawMap, resolve } from './notam-map.js';
+import { hasMap, loadMap, drawMap, resolve } from './notam-map.js';
 
 const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>';
 const CHEV = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
@@ -171,8 +171,8 @@ function card(c, fleet) {
       const pin = item.querySelector('.nt-pin');
       pin.addEventListener('click', () => { select(item); open([n], true); });
     }
-    mapIndex().then((idx) => {
-      if (!idx[c.icao]) return;
+    hasMap(c.icao).then((ok) => {
+      if (!ok) return;
       allBtn.hidden = false;
       for (const [, item] of closing) item.querySelector('.nt-pin').hidden = false;
     });
