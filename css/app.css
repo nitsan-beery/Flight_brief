@@ -201,3 +201,15 @@ button:disabled{opacity:.4;cursor:default}
 .nt-mapmsg{font-size:13px;color:var(--warn);margin:6px 0 0}
 .nt-osm{font-size:11px;color:var(--tx3);margin:2px 0 0;direction:ltr;text-align:left}
 @media (max-width:899px){.nt-body.has-map{display:block}.nt-mapbox{position:static;border-inline-start:none;border-bottom:1px solid var(--ln)}.nt-svg{height:380px}}
+/* סרגל עליון קבוע במסכי התוצרים (requirements.md, 5.0, גרסה 62). השוליים השליליים מכסים את ריפוד הגוף, כך שבמנוחה הוא נראה כמו קודם. */
+#product-view>.bar{position:sticky;top:0;z-index:6;background:var(--bg);margin:calc(-1*max(12px,env(safe-area-inset-top))) -16px 12px;padding:max(12px,env(safe-area-inset-top)) 16px 8px}
+@media (min-width:900px){.nt-mapbox{top:calc(max(12px,env(safe-area-inset-top)) + 64px)}}
+/* כרטיסי NOTAM מקופלים (5.3, גרסה 62) */
+.nt-hd{cursor:pointer;user-select:none;-webkit-user-select:none}
+.nt-chev{display:inline-flex;color:var(--tx2);transition:transform .15s}
+.nt-chev svg{width:18px;height:18px}
+.nt-card.open .nt-chev{transform:rotate(-90deg)}
+.nt-card:not(.open) .nt-hd{border-bottom:none}
+.nt-card:not(.open)>:not(.nt-hd){display:none}
+.nt-cnt{font-size:12px;min-width:22px;text-align:center;padding:1px 7px;border-radius:10px;background:var(--card);color:var(--tx)}
+.nt-closures{font-size:11px;padding:1px 6px;border-radius:6px;color:var(--bad);border:1px solid var(--bad)}

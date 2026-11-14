@@ -6,6 +6,7 @@ import { GROUPS, GROUP_LABEL, groupOf, validLabel, hhColon, REASON_LABEL, ROLE_L
 import { mapIndex, loadMap, drawMap, resolve } from './notam-map.js';
 
 const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>';
+const CHEV = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
 const MAP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>';
 
 // טקסט LTR בתוך משפט בעברית: בידוד כיווניות (LRI … PDI), כדי שלא יתהפך הסדר.
@@ -100,17 +101,39 @@ function mapPanel(c, fleet, body) {
   return { panel, open };
 }
 
+// הכרטיסים הפתוחים (לפי שדה), עד שנטען תדריך אחר.
+let openRes = null;
+const openCards = new Set();
+
 function card(c, fleet) {
   const box = el('section', 'nt-card');
   const hd = el('div', 'nt-hd');
+  hd.setAttribute('role', 'button');
+  hd.tabIndex = 0;
+  const chev = el('span', 'nt-chev');
+  chev.innerHTML = CHEV;
   const icao = el('span', 'nt-icao', c.icao);
   icao.dir = 'ltr';
-  hd.append(icao);
+  hd.append(chev, icao);
   for (const r of c.roles) hd.append(el('span', 'nt-chip', ROLE_LABEL[r.role]));
-  const win = el('span', 'nt-win', `${windowLabel(c.roles)} · ${c.shown.length}`);
+  const nClosing = c.shown.filter((n) => n.closures?.length).length;
+  if (nClosing) hd.append(el('span', 'nt-closures', `סגירות ${nClosing}`));
+  const win = el('span', 'nt-win', windowLabel(c.roles));
   win.dir = 'ltr';
-  hd.append(win);
+  const cnt = el('span', 'nt-cnt', String(c.shown.length));
+  hd.append(win, cnt);
   box.append(hd);
+  // מקופל כברירת מחדל. לחיצה על הכותרת פותחת וסוגרת (לא על כפתור שבתוכה).
+  const setOpen = (on) => {
+    box.classList.toggle('open', on);
+    hd.setAttribute('aria-expanded', String(on));
+    if (on) openCards.add(c.icao); else openCards.delete(c.icao);
+  };
+  setOpen(openCards.has(c.icao));
+  hd.addEventListener('click', (e) => { if (!e.target.closest('button')) setOpen(!box.classList.contains('open')); });
+  hd.addEventListener('keydown', (e) => {
+    if (e.target === hd && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(!box.classList.contains('open')); }
+  });
   for (const r of c.roles) if (r.note) box.append(el('p', 'nt-empty', `${ROLE_LABEL[r.role]}: ${r.note}. ה-NOTAM מוצגים בלי סינון לפי זמן.`));
 
   const body = el('div', 'nt-body');
@@ -138,10 +161,12 @@ function card(c, fleet) {
     const allBtn = el('button', 'nt-mapbtn');
     allBtn.type = 'button';
     allBtn.hidden = true;
-    allBtn.innerHTML = `${MAP_ICON}<span>מפת סגירות</span>`;
-    hd.insertBefore(allBtn, win);
+    allBtn.innerHTML = MAP_ICON;
+    allBtn.setAttribute('aria-label', 'מפת סגירות');
+    allBtn.title = 'מפת סגירות';
+    hd.append(allBtn);
     const select = (item) => { for (const [, it] of closing) it.classList.toggle('on', it === item); };
-    allBtn.addEventListener('click', () => { select(null); open(closing.map(([n]) => n), false); });
+    allBtn.addEventListener('click', () => { setOpen(true); select(null); open(closing.map(([n]) => n), false); });
     for (const [n, item] of closing) {
       const pin = item.querySelector('.nt-pin');
       pin.addEventListener('click', () => { select(item); open([n], true); });
@@ -184,5 +209,6 @@ export function renderNotams(slot, res) {
   sum.append(` · מוצגים ${res.shown} מתוך ${res.total}`);
   slot.append(sum);
   for (const w of ctx.warnings) slot.append(el('p', 'note nt-warn', w));
+  if (openRes !== res) { openRes = res; openCards.clear(); }
   for (const c of res.cards) slot.append(card(c, f));
 }
