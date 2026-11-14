@@ -79,6 +79,7 @@ test('השדות, התפקידים וחלונות הזמן מעמוד 1', () => 
   assert.deepEqual(w('EDDF', 'DEST'), { from: T('2703051105'), to: T('2703051505') });
   assert.deepEqual(w('EDDK', 'ALTN'), { from: T('2703051135'), to: T('2703051535') });
   assert.deepEqual(w('LGAV', 'ERA'), { from: T('2703051105'), to: T('2703051505') });
+  assert.equal(c.airports.get('LGAV').roles.find((r) => r.role === 'ERA').pct, 3);
   assert.deepEqual([...c.airports.keys()], ['LLBG', 'EDDF', 'EDDK', 'LGAV']);
 });
 

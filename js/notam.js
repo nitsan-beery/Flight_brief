@@ -120,9 +120,9 @@ export function flightContext(page1, ofp, brief) {
   const around = (t, before, after) => (t == null ? null : { from: t - before * HOUR, to: t + after * HOUR });
 
   const airports = new Map();
-  const add = (icao, role, window, note) => {
+  const add = (icao, role, window, note, extra) => {
     if (!airports.has(icao)) airports.set(icao, { icao, roles: [] });
-    airports.get(icao).roles.push({ role, window, note });
+    airports.get(icao).roles.push({ role, window, note, ...extra });
   };
   add(brief.org, 'DEP', around(stdT, 1, 3));
   add(brief.dst, 'DEST', around(etaT, 1, 3));
@@ -139,8 +139,9 @@ export function flightContext(page1, ofp, brief) {
   }
 
   // ‏ERA רק עם CONT n% ERA. ב-MIN CONT / MAX CONT אין.
-  const era = /\bCONT \d+% ERA \d+ \d{2}\.\d{2} ([A-Z]{4})\b/.exec(text);
-  if (era) add(era[1], 'ERA', around(etaT, 1, 3));
+  // האחוז (3% או 5%) מוצג בתגית (5.3).
+  const era = /\bCONT (\d+)% ERA \d+ \d{2}\.\d{2} ([A-Z]{4})\b/.exec(text);
+  if (era) add(era[2], 'ERA', around(etaT, 1, 3), undefined, { pct: +era[1] });
 
   // ‏EDTO ALTN: תקופת ההתאמה מה-OFP, שעה לפני עד 3 שעות אחרי.
   const edto = /\bEDTO ALTN ((?:[A-Z]{4} ?)+)/.exec(text);
@@ -656,5 +657,8 @@ export const REASON_LABEL = {
   perm: 'PERM ותיק (בדפיות Jeppesen)',
   restrict: 'מגבלת מוטה / Code שהמטוס עומד בה',
 };
+
+/** התווית של תפקיד בכרטיס: "ERA 3%" עם האחוז מעמוד 1. */
+export const roleLabel = (r) => (r.pct ? `${ROLE_LABEL[r.role]} ${r.pct}%` : ROLE_LABEL[r.role]);
 
 export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'Dest ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };

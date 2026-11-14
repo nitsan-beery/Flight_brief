@@ -2,7 +2,7 @@
 // כרטיס לכל שדה רלוונטי, קבוצות לפי נושא, טקסט ה-NOTAM כמו שהוא (LTR), והערך של קטגוריית המטוס מודגש.
 // הלוגיקה עצמה ב-notam.js. כאן רק בניית ה-DOM, עם textContent (בלי HTML מהתדריך).
 
-import { GROUPS, GROUP_LABEL, groupOf, validLabel, hhColon, REASON_LABEL, ROLE_LABEL } from './notam.js';
+import { GROUPS, GROUP_LABEL, groupOf, validLabel, hhColon, REASON_LABEL, ROLE_LABEL, roleLabel } from './notam.js';
 import { hasMap, loadMap, drawMap, resolve } from './notam-map.js';
 
 const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>';
@@ -115,7 +115,7 @@ function card(c, fleet) {
   const icao = el('span', 'nt-icao', c.icao);
   icao.dir = 'ltr';
   hd.append(chev, icao);
-  for (const r of c.roles) hd.append(el('span', 'nt-chip', ROLE_LABEL[r.role]));
+  for (const r of c.roles) hd.append(el('span', 'nt-chip', roleLabel(r)));
   const win = el('span', 'nt-win', windowLabel(c.roles));
   win.dir = 'ltr';
   const cnt = el('span', 'nt-cnt', String(c.shown.length));
