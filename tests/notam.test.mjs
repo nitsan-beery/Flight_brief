@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText, closuresOf, groupOf } from '../js/notam.js';
-import { resolve, runwayEnds } from '../js/notam-map.js';
+import { resolve, runwayEnds, nameRunways } from '../js/notam-map.js';
 
 const T = (s) => Date.UTC(2000 + +s.slice(0, 2), +s.slice(2, 4) - 1, +s.slice(4, 6), +s.slice(6, 8), +s.slice(8, 10));
 
@@ -364,4 +364,21 @@ test('מפה: שמות המסלולים בקצה הנכון', () => {
   assert.deepEqual(at('16'), [0, -500]);
   assert.deepEqual(at('34'), [100, 500]);
   assert.equal(e.length, 4);
+});
+
+test('מפה: קטע מסלול בלי שם שממשיך מסלול עם שם מקבל את השם', () => {
+  // ‏16/34 מצפון לדרום בשני קטעים; הדרומי בלי שם, מחובר בצומת 29. קטע ניצב בלי שם – לא מקבל שם.
+  const map = {
+    rwy: [
+      { r: '16/34', p: [0, -500, 0, 0], j: [[0, 1], [1, 29]] },
+      { r: '', p: [0, 0, 0, 400], j: [[0, 29], [1, 2]] },
+      { r: '', p: [0, 400, 300, 400], j: [[0, 2], [1, 3]] },
+    ],
+    twy: [], stand: [], apron: [], term: [],
+  };
+  nameRunways(map);
+  assert.deepEqual(map.rwy.map((r) => r.r), ['16/34', '16/34', '']);
+  const e = runwayEnds(map.rwy);
+  assert.deepEqual(e.map((x) => [x.name, x.x, x.y]), [['16', 0, -500], ['34', 0, 400]]);
+  assert.equal(resolve(map, [{ kind: 'rwy', ref: '34' }]).lines.length, 2);
 });

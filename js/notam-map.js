@@ -173,6 +173,7 @@ function anchorPoint(map, a) {
  * @returns {{lines:{pts, label}[], dots:{x,y,label}[], refs:{x,y,label}[], missing:string[], whole:string[]}}
  */
 export function resolve(map, closures) {
+  nameRunways(map);
   const r = { lines: [], dots: [], refs: [], missing: [], whole: [] };
   for (const c of closures) {
     if (c.kind === 'stand') {
@@ -211,6 +212,28 @@ const el = (tag, attrs, parent) => {
 const d = (p) => 'M' + p.map(([x, y]) => `${x} ${y}`).join('L');
 
 /**
+ * מסלול שמחולק ב-OSM לכמה קטעים, ורק לחלק מהם יש שם (LSZH: הקטע הדרומי של 16/34): קטע בלי שם
+ * שמתחבר בקצה שלו לקצה של מסלול עם שם, באותו כיוון (עד 10°), מקבל את השם. בלי זה ‏34 נכתב באמצע המסלול
+ * ו-RWY 34 CLSD לא מסמן את כולו (גרסה 82).
+ */
+export function nameRunways(map) {
+  if (map._named) return map;
+  const endJ = (r) => { const n = r.p.length / 2 - 1; return (r.j ?? []).filter(([i]) => i === 0 || i === n).map(([, j]) => j); };
+  const dir = (r) => { const p = pts(r.p), a = p[0], b = p.at(-1), l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const u of map.rwy) {
+      if (u.r) continue;
+      const ju = new Set(endJ(u));
+      const named = map.rwy.find((r) => r.r && endJ(r).some((j) => ju.has(j)) && Math.abs(dir(r)[0] * dir(u)[0] + dir(r)[1] * dir(u)[1]) > Math.cos(Math.PI / 18));
+      if (named) { u.r = named.r; changed = true; }
+    }
+  }
+  map._named = true;
+  return map;
+}
+
+/**
  * קצות המסלולים ושמותיהם: "10/28" – ‏10 בקצה שממנו הכיוון הוא כ-100°, ‏28 בקצה השני.
  * כמה קטעים עם אותו שם (מסלול שמחולק ב-OSM) – הקצוות הרחוקים ביותר לאורך הציר.
  * ux, uy: כיוון מהקצה לתוך המסלול (התווית נכתבת מעבר לקצה). שם שאינו מספר מסלול – בלי תווית.
@@ -246,6 +269,7 @@ export function runwayEnds(rwys) {
  * התוויות והנקודות המודגשות שומרות על גודל קבוע על המסך בכל זום.
  */
 export function drawMap(map) {
+  nameRunways(map);
   const all = [...map.rwy, ...map.twy].flatMap((t) => pts(t.p));
   const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
   const full = all.length
