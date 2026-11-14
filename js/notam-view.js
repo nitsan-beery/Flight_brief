@@ -95,7 +95,10 @@ function mapPane(fleet) {
   btn('התרחקות', '−', () => ctl?.zoomBy(1.6));
   btn('כל השדה', '⤢', () => ctl?.reset());
 
-  async function show(c, items, focus) {
+  // onPick(n): לחיצה על סגירה במפה – ה-NOTAM שלה (גרסה 81).
+  let onPick = null;
+  async function show(c, items, focus, pick) {
+    onPick = pick ?? null;
     const my = ++token;
     title.textContent = c.icao;
     what.textContent = focus ? items[0].id : items.length ? 'כל הסגירות' : '';
@@ -114,12 +117,25 @@ function mapPane(fleet) {
       }
       ctl = drawMap(map);
       ctl.map = map;
+      ctl.onPick = (i) => onPick?.(i);
       stage.replaceChildren(ctl.svg);
       osm.textContent = `© OpenStreetMap contributors · ${map.date}`;
       tools.hidden = false;
     }
     if (!ctl) return;
-    const res = resolve(ctl.map, items.flatMap((n) => n.closures ?? []));
+    // כל NOTAM בנפרד, וכל קו או נקודה מסומנים במספר ה-NOTAM (nid), כדי שלחיצה במפה תחזיר אליו.
+    const res = { lines: [], dots: [], refs: [], missing: [], whole: [] };
+    items.forEach((n, i) => {
+      const r = resolve(ctl.map, n.closures ?? []);
+      for (const l of r.lines) res.lines.push({ ...l, nid: i });
+      for (const p of r.dots) res.dots.push({ ...p, nid: i });
+      res.refs.push(...r.refs);
+      res.missing.push(...r.missing);
+      res.whole.push(...r.whole);
+    });
+    res.missing = [...new Set(res.missing)];
+    res.whole = [...new Set(res.whole)];
+    ctl.onPick = (i) => onPick?.(items[i]);
     ctl.show(res, focus);
     const parts = [];
     if (res.missing.length) parts.push(`לא נמצא במפה: ${ltr(res.missing.join(', '))}.`);
@@ -161,7 +177,17 @@ function card(c, fleet, pane) {
     box.classList.add('sel');
     item?.classList.add('on');
   };
-  const showAll = () => { select(null); pane.show(c, closing, false); };
+  // לחיצה על סגירה במפה: הכרטיס נפתח, ה-NOTAM מסומן ונגלל למקום, והמפה מתמקדת בו. לחיצה נוספת – בחזרה לכל השדה.
+  const pick = (n) => {
+    const item = items.find(([m]) => m === n)?.[1];
+    if (!item) return;
+    if (item.classList.contains('on')) { showAll(); return; }
+    setOpen(true);
+    select(item);
+    pane.show(c, [n], true, pick);
+    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  const showAll = () => { select(null); pane.show(c, closing, false, pick); };
 
   // מקופל כברירת מחדל. לחיצה על הכותרת פותחת וסוגרת (לא על כפתור שבתוכה). פתיחה מעבירה את המפה לשדה.
   const setOpen = (on) => {
@@ -210,7 +236,7 @@ function card(c, fleet, pane) {
         item.querySelector('.nt-pin').hidden = false;
         item.classList.add('nt-mapitem');
         // לחיצה נוספת על ה-NOTAM שנבחר: בחזרה לכל השדה, בלי סימון (גרסה 80).
-        item.addEventListener('click', () => { if (item.classList.contains('on')) showAll(); else { select(item); pane.show(c, [n], true); } });
+        item.addEventListener('click', () => { if (item.classList.contains('on')) showAll(); else { select(item); pane.show(c, [n], true, pick); } });
       }
     });
   }

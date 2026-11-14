@@ -292,8 +292,13 @@ export function drawMap(map) {
       // מסלול – ברוחב האמיתי (ועוד קצת); מסלול הסעה – 7 פיקסלים בכל זום.
       if (l.w) el('path', { d: d(l.pts), class: 'm-hl', 'stroke-width': Math.max(l.w + 8, 7 * s) }, hl);
       else el('path', { d: d(l.pts), class: 'm-hl', 'stroke-width': 7 * s }, hl);
+      // אזור לחיצה רחב ובלתי נראה, לאצבע (5.3.3, גרסה 81).
+      if (l.nid != null) el('path', { d: d(l.pts), class: 'm-hit', 'stroke-width': Math.max((l.w ?? 0) + 8, 26 * s), 'data-nid': l.nid }, hl);
     }
-    for (const p of cur.dots) el('circle', { cx: p.x, cy: p.y, r: 7 * s, class: 'm-hl-dot' }, hl);
+    for (const p of cur.dots) {
+      el('circle', { cx: p.x, cy: p.y, r: 7 * s, class: 'm-hl-dot' }, hl);
+      if (p.nid != null) el('circle', { cx: p.x, cy: p.y, r: 16 * s, class: 'm-hit', 'data-nid': p.nid }, hl);
+    }
     const fs = 14 * s;
     const seen = new Set();
     const label = (x, y, text, cls) => {
@@ -332,13 +337,17 @@ export function drawMap(map) {
     const mid = p.length === 2 ? [(p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2] : p.length ? [p[0].x, p[0].y] : null;
     start = { vb: [...vb], s: geom().s, mid, dist: p.length === 2 ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) : 0, anchor: mid && toMap(...mid) };
   };
+  // לחיצה (בלי גרירה) על סגירה מסומנת: ה-NOTAM שלה (onPick). גרירה של יותר מ-6 פיקסלים אינה לחיצה.
+  let tap = null;
   svg.addEventListener('pointerdown', (e) => {
+    tap = ptrs.size === 0 ? { x: e.clientX, y: e.clientY, nid: e.target.closest?.('[data-nid]')?.getAttribute('data-nid') ?? null } : null;
     try { svg.setPointerCapture(e.pointerId); } catch { /* בלי לכידה – הגרירה עדיין עובדת בתוך המפה */ }
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     snap();
   });
   svg.addEventListener('pointermove', (e) => {
     if (!ptrs.has(e.pointerId) || !start) return;
+    if (ptrs.size > 1) tap = null;
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const p = [...ptrs.values()];
     if (p.length === 1) {
@@ -357,7 +366,13 @@ export function drawMap(map) {
       overlay();
     }
   });
-  const end = (e) => { if (!ptrs.delete(e.pointerId)) return; snap(); overlay(); };
+  const end = (e) => {
+    if (!ptrs.delete(e.pointerId)) return;
+    snap();
+    overlay();
+    if (e.type === 'pointerup' && tap?.nid != null && !ptrs.size && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 6) api.onPick?.(+tap.nid);
+    if (!ptrs.size) tap = null;
+  };
   svg.addEventListener('pointerup', end);
   svg.addEventListener('pointercancel', end);
   svg.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(Math.exp(e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });
@@ -378,5 +393,6 @@ export function drawMap(map) {
       setVB([(box[0] + box[2]) / 2 - w / 2, (box[1] + box[3]) / 2 - h / 2, w, h]);
     } else setVB([...full]);
   }
-  return { svg, show, zoomBy: (f) => zoomAt(f), reset: () => setVB([...full]) };
+  const api = { svg, show, zoomBy: (f) => zoomAt(f), reset: () => setVB([...full]), onPick: null };
+  return api;
 }
