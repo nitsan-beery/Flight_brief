@@ -185,9 +185,6 @@ button:disabled{opacity:.4;cursor:default}
 .nt.on{background:var(--card)}
 .nt.on .nt-pin{color:var(--ac);border-color:var(--ac)}
 .nt-closed{font-size:11px;padding:0 6px;border-radius:6px;color:var(--bad);border:1px solid var(--bad)}
-.nt-body.has-map{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
-.nt-mapbox{order:2;position:sticky;top:8px;padding:8px 10px;border-inline-start:1px solid var(--ln)}
-.nt-svg{width:100%;height:460px;display:block}
 .nt-svg text{direction:ltr;font-weight:600;paint-order:stroke;stroke:var(--sheet);stroke-width:.22em}
 .m-apron{fill:var(--card);stroke:var(--ln);stroke-width:2}
 .m-term{fill:var(--bx)}
@@ -200,10 +197,8 @@ button:disabled{opacity:.4;cursor:default}
 .m-ref{fill:var(--tx2);font-weight:400}
 .nt-mapmsg{font-size:13px;color:var(--warn);margin:6px 0 0}
 .nt-osm{font-size:11px;color:var(--tx3);margin:2px 0 0;direction:ltr;text-align:left}
-@media (max-width:899px){.nt-body.has-map{display:block}.nt-mapbox{position:static;border-inline-start:none;border-bottom:1px solid var(--ln)}.nt-svg{height:380px}}
 /* סרגל עליון קבוע במסכי התוצרים (requirements.md, 5.0, גרסה 62). השוליים השליליים מכסים את ריפוד הגוף, כך שבמנוחה הוא נראה כמו קודם. */
 #product-view>.bar{position:sticky;top:0;z-index:6;background:var(--bg);margin:calc(-1*max(12px,env(safe-area-inset-top))) -16px 12px;padding:max(12px,env(safe-area-inset-top)) 16px 8px}
-@media (min-width:900px){.nt-mapbox{top:calc(max(12px,env(safe-area-inset-top)) + 64px)}}
 /* כרטיסי NOTAM מקופלים (5.3, גרסה 62) */
 .nt-hd{cursor:pointer;user-select:none;-webkit-user-select:none}
 .nt-chev{display:inline-flex;color:var(--tx2);transition:transform .15s}
@@ -214,3 +209,16 @@ button:disabled{opacity:.4;cursor:default}
 .nt-cnt{font-size:12px;min-width:22px;text-align:center;padding:1px 7px;border-radius:10px;background:var(--card);color:var(--tx)}
 .nt-hidden-why{font-size:13px;color:var(--tx2);margin-top:2px;line-height:1.6}
 .nt-hidden-why b{font-weight:600;color:var(--tx)}
+/* מסך NOTAM: כרטיסים ומפה אחת (requirements.md, 5.3.3, גרסה 76). רחב: חצי-חצי; צר: מפה בתחתית. */
+main:has(#product-view:not([hidden]) [data-pane="notam"]:not([hidden])){max-width:1400px}
+.nt-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+.nt-mappane{position:sticky;top:calc(max(12px,env(safe-area-inset-top)) + 64px);z-index:4;display:flex;flex-direction:column;background:var(--sheet);border:1px solid var(--ln);border-radius:14px;padding:8px 10px;height:calc(100vh - max(12px,env(safe-area-inset-top)) - 64px - 104px);height:calc(100dvh - max(12px,env(safe-area-inset-top)) - 64px - 104px);min-height:300px}
+.nt-maphd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.nt-mapwhat{font-size:12px;color:var(--tx2);direction:ltr}
+.nt-maptools{margin-inline-start:auto;display:flex;gap:4px}
+.nt-zoom{padding:1px 10px;font-size:17px;line-height:1.4;min-width:34px;justify-content:center}
+.nt-mapstage{flex:1;min-height:0}
+.nt-svg{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.nt-nomap{color:var(--tx2);font-size:14px;text-align:center;margin:25% 0 0}
+.nt-card.sel{border-color:var(--ac)}
+@media (max-width:899px){.nt-split{display:block}.nt-mappane{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));height:40vh;height:40dvh;min-height:220px;margin-top:12px}}

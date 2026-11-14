@@ -72,41 +72,71 @@ function windowLabel(roles) {
   return `${hhColon(from)}–${hhColon(to)}Z`;
 }
 
-/** מפת הסגירות בכרטיס (5.3.3): נבנית בלחיצה הראשונה. */
-function mapPanel(c, fleet, body) {
-  const panel = el('div', 'nt-mapbox');
-  panel.hidden = true;
+/**
+ * מפה אחת למסך כולו (5.3.3, גרסה 76): מוצגת תמיד. במסך רחב בחצי השמאלי, בצר בתחתית.
+ * show(card, items, focus): השדה של הכרטיס, ועליו הסגירות של ה-NOTAM שנבחרו.
+ */
+function mapPane(fleet) {
+  const pane = el('aside', 'nt-mappane');
+  const head = el('div', 'nt-maphd');
+  const title = el('span', 'nt-icao');
+  title.dir = 'ltr';
+  const what = el('span', 'nt-mapwhat');
+  const tools = el('span', 'nt-maptools');
+  const btn = (label, text, fn) => { const b = el('button', 'nt-zoom', text); b.type = 'button'; b.setAttribute('aria-label', label); b.title = label; b.addEventListener('click', fn); tools.append(b); return b; };
+  head.append(title, what, tools);
+  const stage = el('div', 'nt-mapstage');
   const msg = el('p', 'nt-mapmsg');
-  let ctl = null;
-  async function open(items, zoom) {
-    if (!ctl) {
+  const osm = el('p', 'nt-osm');
+  pane.append(head, stage, msg, osm);
+
+  let ctl = null, shownIcao = null, token = 0;
+  btn('התקרבות', '+', () => ctl?.zoomBy(1 / 1.6));
+  btn('התרחקות', '−', () => ctl?.zoomBy(1.6));
+  btn('כל השדה', '⤢', () => ctl?.reset());
+
+  async function show(c, items, focus) {
+    const my = ++token;
+    title.textContent = c.icao;
+    what.textContent = focus ? items[0].id : items.length ? 'כל הסגירות' : '';
+    if (shownIcao !== c.icao) {
+      ctl = null;
+      shownIcao = c.icao;
+      stage.replaceChildren(el('p', 'nt-mapmsg', 'טוען מפה…'));
+      osm.textContent = '';
       const map = await loadMap(c.icao);
-      if (!map) { panel.hidden = false; panel.replaceChildren(el('p', 'nt-mapmsg', 'המפה של השדה לא נטענה.')); return; }
+      if (my !== token) return;
+      if (!map) {
+        stage.replaceChildren(el('p', 'nt-nomap', navigator.onLine === false ? 'המפה לא ירדה (אין חיבור).' : `אין מפה לשדה ${ltr(c.icao)}.`));
+        msg.textContent = '';
+        tools.hidden = true;
+        return;
+      }
       ctl = drawMap(map);
       ctl.map = map;
-      panel.replaceChildren(ctl.svg, msg, el('p', 'nt-osm', `© OpenStreetMap contributors · ${map.date}`));
+      stage.replaceChildren(ctl.svg);
+      osm.textContent = `© OpenStreetMap contributors · ${map.date}`;
+      tools.hidden = false;
     }
-    panel.hidden = false;
-    body.classList.add('has-map');
-    const res = resolve(ctl.map, items.flatMap((n) => n.closures));
-    ctl.show(res, zoom);
+    if (!ctl) return;
+    const res = resolve(ctl.map, items.flatMap((n) => n.closures ?? []));
+    ctl.show(res, focus);
     const parts = [];
     if (res.missing.length) parts.push(`לא נמצא במפה: ${ltr(res.missing.join(', '))}.`);
     if (res.whole.length) parts.push(`הקטע לא זוהה, מסומן כל ה-TWY: ${ltr(res.whole.join(', '))}.`);
-    if (zoom && fleet && items.some((n) => n.closures.some((x) => x.forUs))) parts.push(`סגור ל-${ltr(`Code ${fleet.code}`)}: המטוס מחוץ למגבלה.`);
-    if (!res.lines.length && !res.dots.length && !parts.length) parts.push('אין מה לסמן במפה.');
+    if (focus && fleet && items.some((n) => n.closures?.some((x) => x.forUs))) parts.push(`סגור ל-${ltr(`Code ${fleet.code}`)}: המטוס מחוץ למגבלה.`);
     msg.textContent = parts.join(' ');
-    if (matchMedia('(max-width: 899px)').matches) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
-  return { panel, open };
+  return { pane, show };
 }
 
 // הכרטיסים הפתוחים (לפי שדה), עד שנטען תדריך אחר.
 let openRes = null;
 const openCards = new Set();
 
-function card(c, fleet) {
+function card(c, fleet, pane) {
   const box = el('section', 'nt-card');
+  box.dataset.icao = c.icao;
   const hd = el('div', 'nt-hd');
   hd.setAttribute('role', 'button');
   hd.tabIndex = 0;
@@ -122,41 +152,48 @@ function card(c, fleet) {
   const cnt = el('span', 'nt-cnt', String(c.shown.length));
   hd.append(win, cnt);
   box.append(hd);
-  // מקופל כברירת מחדל. לחיצה על הכותרת פותחת וסוגרת (לא על כפתור שבתוכה).
+
+  const closing = c.shown.filter((n) => n.closures?.length);
+  const items = [];
+  const select = (item) => {
+    for (const it of document.querySelectorAll('.nt-card .nt.on')) it.classList.remove('on');
+    for (const cd of document.querySelectorAll('.nt-card.sel')) cd.classList.remove('sel');
+    box.classList.add('sel');
+    item?.classList.add('on');
+  };
+  const showAll = () => { select(null); pane.show(c, closing, false); };
+
+  // מקופל כברירת מחדל. לחיצה על הכותרת פותחת וסוגרת (לא על כפתור שבתוכה). פתיחה מעבירה את המפה לשדה.
   const setOpen = (on) => {
     box.classList.toggle('open', on);
     hd.setAttribute('aria-expanded', String(on));
     if (on) openCards.add(c.icao); else openCards.delete(c.icao);
   };
   setOpen(openCards.has(c.icao));
-  hd.addEventListener('click', (e) => { if (!e.target.closest('button')) setOpen(!box.classList.contains('open')); });
+  const toggle = () => { const on = !box.classList.contains('open'); setOpen(on); if (on) showAll(); };
+  hd.addEventListener('click', (e) => { if (!e.target.closest('button')) toggle(); });
   hd.addEventListener('keydown', (e) => {
-    if (e.target === hd && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(!box.classList.contains('open')); }
+    if (e.target === hd && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggle(); }
   });
   for (const r of c.roles) if (r.note) box.append(el('p', 'nt-empty', `${ROLE_LABEL[r.role]}: ${r.note}. ה-NOTAM מוצגים בלי סינון לפי זמן.`));
 
-  const body = el('div', 'nt-body');
   const list = el('div', 'nt-list');
-  body.append(list);
-  box.append(body);
+  box.append(list);
   if (!c.shown.length) list.append(el('p', 'nt-empty', 'אין NOTAM רלוונטי'));
   const groups = new Map(GROUPS.map((g) => [g, []]));
   for (const n of c.shown) groups.get(groupOf(n)).push(n);
-  const closing = [];
-  for (const [g, items] of groups) {
-    if (!items.length) continue;
+  for (const [g, ns] of groups) {
+    if (!ns.length) continue;
     list.append(el('div', 'nt-grp', GROUP_LABEL[g]));
-    for (const n of items) {
+    for (const n of ns) {
       const item = notamItem(n, null, fleet);
       list.append(item);
-      if (n.closures?.length) closing.push([n, item]);
+      if (n.closures?.length) items.push([n, item]);
     }
   }
 
-  // מפת סגירות: רק כשיש סגירה ויש קובץ מפה לשדה.
+  // כפתור המפה בכותרת (כל הסגירות בשדה) וסמלי המפה ליד NOTAM – רק כשיש לשדה מפה.
   if (closing.length) {
-    const { panel, open } = mapPanel(c, fleet, body);
-    body.prepend(panel);
     const allBtn = el('button', 'nt-mapbtn');
     allBtn.type = 'button';
     allBtn.hidden = true;
@@ -164,16 +201,14 @@ function card(c, fleet) {
     allBtn.setAttribute('aria-label', 'מפת סגירות');
     allBtn.title = 'מפת סגירות';
     hd.append(allBtn);
-    const select = (item) => { for (const [, it] of closing) it.classList.toggle('on', it === item); };
-    allBtn.addEventListener('click', () => { setOpen(true); select(null); open(closing.map(([n]) => n), false); });
-    for (const [n, item] of closing) {
-      const pin = item.querySelector('.nt-pin');
-      pin.addEventListener('click', () => { select(item); open([n], true); });
+    allBtn.addEventListener('click', () => { setOpen(true); showAll(); });
+    for (const [n, item] of items) {
+      item.querySelector('.nt-pin').addEventListener('click', () => { select(item); pane.show(c, [n], true); });
     }
     hasMap(c.icao).then((ok) => {
       if (!ok) return;
       allBtn.hidden = false;
-      for (const [, item] of closing) item.querySelector('.nt-pin').hidden = false;
+      for (const [, item] of items) item.querySelector('.nt-pin').hidden = false;
     });
   }
 
@@ -201,7 +236,7 @@ function card(c, fleet) {
     });
     box.append(det);
   }
-  return box;
+  return { box, showAll };
 }
 
 /**
@@ -220,5 +255,20 @@ export function renderNotams(slot, res) {
   slot.append(sum);
   for (const w of ctx.warnings) slot.append(el('p', 'note nt-warn', w));
   if (openRes !== res) { openRes = res; openCards.clear(); }
-  for (const c of res.cards) slot.append(card(c, f));
+
+  // שני חלקים: הכרטיסים (מימין, או למעלה) והמפה (משמאל, או למטה).
+  const split = el('div', 'nt-split');
+  const cards = el('div', 'nt-cards');
+  const pane = mapPane(f);
+  split.append(cards, pane.pane);
+  slot.append(split);
+  const built = res.cards.map((c) => { const b = card(c, f, pane); cards.append(b.box); return [c, b]; });
+
+  // בכניסה: שדה היעד, ואם אין לו מפה – השדה הראשון ברשימה שיש לו.
+  (async () => {
+    const order = [...built].sort((a, b) => (a[0].roles.some((r) => r.role === 'DEST') ? -1 : 0) - (b[0].roles.some((r) => r.role === 'DEST') ? -1 : 0));
+    for (const [c, b] of order) if (await hasMap(c.icao)) { b.showAll(); return; }
+    const dest = built.find(([c]) => c.roles.some((r) => r.role === 'DEST')) ?? built[0];
+    if (dest) dest[1].showAll();
+  })();
 }

@@ -210,11 +210,17 @@ const el = (tag, attrs, parent) => {
 };
 const d = (p) => 'M' + p.map(([x, y]) => `${x} ${y}`).join('L');
 
-/** SVG של השדה. מחזיר את האלמנט ופונקציה show(resolved, zoom). */
+/**
+ * SVG של השדה, עם זום והזזה (5.3.3): צביטה וגרירה במגע, גלגלת וגרירה בעכבר.
+ * מחזיר {svg, show(resolved, focus), zoomBy(factor), reset()}.
+ * התוויות והנקודות המודגשות שומרות על גודל קבוע על המסך בכל זום.
+ */
 export function drawMap(map) {
   const all = [...map.rwy, ...map.twy].flatMap((t) => pts(t.p));
   const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
-  const full = [Math.min(...xs) - 60, Math.min(...ys) - 60, Math.max(...xs) - Math.min(...xs) + 120, Math.max(...ys) - Math.min(...ys) + 120];
+  const full = all.length
+    ? [Math.min(...xs) - 60, Math.min(...ys) - 60, Math.max(...xs) - Math.min(...xs) + 120, Math.max(...ys) - Math.min(...ys) + 120]
+    : [-1000, -1000, 2000, 2000];
   const svg = el('svg', { class: 'nt-svg', viewBox: full.join(' '), role: 'img', 'aria-label': `מפת ${map.icao}` });
   const base = el('g', { class: 'm-base' }, svg);
   for (const a of map.apron) el('path', { d: d(pts(a.p)) + 'Z', class: 'm-apron' }, base);
@@ -224,30 +230,116 @@ export function drawMap(map) {
   for (const s of map.stand) el('circle', { cx: s[1], cy: s[2], r: 5, class: 'm-stand' }, base);
   const hl = el('g', {}, svg), lb = el('g', {}, svg);
 
-  function show(res, zoom) {
+  let vb = [...full];
+  let cur = { lines: [], dots: [], refs: [] };
+  let showRefs = false;
+
+  /** מטרים לפיקסל במסך, ומיקום התוכן בתוך האלמנט (preserveAspectRatio: meet, ממורכז). */
+  const geom = () => {
+    const r = svg.getBoundingClientRect();
+    if (!r.width || !r.height) return { s: Math.max(vb[2], vb[3]) / 400, r, ox: 0, oy: 0 };
+    const s = Math.max(vb[2] / r.width, vb[3] / r.height);
+    return { s, r, ox: (r.width - vb[2] / s) / 2, oy: (r.height - vb[3] / s) / 2 };
+  };
+  const toMap = (cx, cy) => {
+    const g = geom();
+    return [vb[0] + (cx - g.r.left - g.ox) * g.s, vb[1] + (cy - g.r.top - g.oy) * g.s];
+  };
+
+  /** התוויות והנקודות המודגשות, בגודל קבוע על המסך. */
+  function overlay() {
+    const { s } = geom();
     hl.replaceChildren();
     lb.replaceChildren();
-    const box = [Infinity, Infinity, -Infinity, -Infinity];
-    const grow = ([x, y]) => { box[0] = Math.min(box[0], x); box[1] = Math.min(box[1], y); box[2] = Math.max(box[2], x); box[3] = Math.max(box[3], y); };
-    for (const l of res.lines) { l.pts.forEach(grow); el('path', { d: d(l.pts), class: 'm-hl', 'stroke-width': Math.max(18, (l.w ?? 0) + 8) }, hl); }
-    for (const s of res.dots) { grow([s.x, s.y]); el('circle', { cx: s.x, cy: s.y, r: 16, class: 'm-hl-dot' }, hl); }
-    if (zoom) res.refs.forEach((r) => grow([r.x, r.y]));
-    let vb = full;
-    if (zoom && box[0] < Infinity) {
-      const w = Math.max(box[2] - box[0], 300) * 1.5, h = Math.max(box[3] - box[1], 300) * 1.5;
-      vb = [(box[0] + box[2]) / 2 - w / 2, (box[1] + box[3]) / 2 - h / 2, w, h];
+    for (const l of cur.lines) {
+      // מסלול – ברוחב האמיתי (ועוד קצת); מסלול הסעה – 7 פיקסלים בכל זום.
+      if (l.w) el('path', { d: d(l.pts), class: 'm-hl', 'stroke-width': Math.max(l.w + 8, 7 * s) }, hl);
+      else el('path', { d: d(l.pts), class: 'm-hl', 'stroke-width': 7 * s }, hl);
     }
-    svg.setAttribute('viewBox', vb.map(Math.round).join(' '));
-    const fs = Math.max(vb[2], vb[3]) / 26;
+    for (const p of cur.dots) el('circle', { cx: p.x, cy: p.y, r: 7 * s, class: 'm-hl-dot' }, hl);
+    const fs = 14 * s;
     const seen = new Set();
     const label = (x, y, text, cls) => {
       if (seen.has(cls + text)) return;
       seen.add(cls + text);
       el('text', { x: x + fs * 0.4, y: y - fs * 0.4, 'font-size': fs, class: cls }, lb).textContent = text;
     };
-    for (const l of res.lines) { const p = l.pts[Math.floor(l.pts.length / 2)]; label(p[0], p[1], l.label, 'm-lb'); }
-    for (const s of res.dots) label(s.x, s.y, s.label, 'm-lb');
-    if (zoom) for (const r of res.refs) label(r.x, r.y, r.label, 'm-ref');
+    for (const l of cur.lines) { const p = l.pts[Math.floor(l.pts.length / 2)]; label(p[0], p[1], l.label, 'm-lb'); }
+    for (const p of cur.dots) label(p.x, p.y, p.label, 'm-lb');
+    if (showRefs) for (const r of cur.refs) label(r.x, r.y, r.label, 'm-ref');
   }
-  return { svg, show };
+
+  // גבולות הזום: מ-150 מ' לרוחב ועד פי 2 מהשדה כולו.
+  const minW = 150, maxW = Math.max(full[2], full[3]) * 2;
+  function setVB(v) {
+    const k = Math.min(Math.max(v[2], minW), maxW) / v[2];
+    const cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2;
+    vb = [cx - (v[2] * k) / 2, cy - (v[3] * k) / 2, v[2] * k, v[3] * k];
+    svg.setAttribute('viewBox', vb.map((n) => Math.round(n * 10) / 10).join(' '));
+    overlay();
+  }
+  /** זום סביב נקודה במסך (או סביב המרכז). factor < 1 – התקרבות. */
+  function zoomAt(f, cx, cy) {
+    const [px, py] = cx == null ? [vb[0] + vb[2] / 2, vb[1] + vb[3] / 2] : toMap(cx, cy);
+    const w = Math.min(Math.max(vb[2] * f, minW), maxW), k = w / vb[2];
+    vb = [px - (px - vb[0]) * k, py - (py - vb[1]) * k, vb[2] * k, vb[3] * k];
+    svg.setAttribute('viewBox', vb.map((n) => Math.round(n * 10) / 10).join(' '));
+    overlay();
+  }
+
+  // ---- מגע ועכבר ----
+  const ptrs = new Map();
+  let start = null;
+  const snap = () => {
+    const p = [...ptrs.values()];
+    const mid = p.length === 2 ? [(p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2] : p.length ? [p[0].x, p[0].y] : null;
+    start = { vb: [...vb], s: geom().s, mid, dist: p.length === 2 ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) : 0, anchor: mid && toMap(...mid) };
+  };
+  svg.addEventListener('pointerdown', (e) => {
+    try { svg.setPointerCapture(e.pointerId); } catch { /* בלי לכידה – הגרירה עדיין עובדת בתוך המפה */ }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    snap();
+  });
+  svg.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId) || !start) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = [...ptrs.values()];
+    if (p.length === 1) {
+      const dx = (p[0].x - start.mid[0]) * start.s, dy = (p[0].y - start.mid[1]) * start.s;
+      vb = [start.vb[0] - dx, start.vb[1] - dy, start.vb[2], start.vb[3]];
+      svg.setAttribute('viewBox', vb.map((n) => Math.round(n * 10) / 10).join(' '));
+    } else if (p.length === 2 && start.dist) {
+      const dist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      const w = Math.min(Math.max(start.vb[2] * (start.dist / dist), minW), maxW), k = w / start.vb[2];
+      const mid = [(p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2];
+      const s = start.s * k;
+      const [ax, ay] = start.anchor;
+      // הנקודה שהייתה בין האצבעות נשארת ביניהן.
+      vb = [ax - (mid[0] - start.mid[0]) * s - (ax - start.vb[0]) * k, ay - (mid[1] - start.mid[1]) * s - (ay - start.vb[1]) * k, start.vb[2] * k, start.vb[3] * k];
+      svg.setAttribute('viewBox', vb.map((n) => Math.round(n * 10) / 10).join(' '));
+      overlay();
+    }
+  });
+  const end = (e) => { if (!ptrs.delete(e.pointerId)) return; snap(); overlay(); };
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(Math.exp(e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });
+  // גודל האלמנט השתנה (סיבוב מסך, מעבר בין רחב לצר): התוויות מחושבות מחדש.
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => overlay()).observe(svg);
+
+  /** focus: זום למה שמסומן (NOTAM אחד). אחרת – כל השדה. */
+  function show(res, focus) {
+    cur = res;
+    showRefs = !!focus;
+    const box = [Infinity, Infinity, -Infinity, -Infinity];
+    const grow = ([x, y]) => { box[0] = Math.min(box[0], x); box[1] = Math.min(box[1], y); box[2] = Math.max(box[2], x); box[3] = Math.max(box[3], y); };
+    for (const l of res.lines) l.pts.forEach(grow);
+    for (const p of res.dots) grow([p.x, p.y]);
+    if (focus) res.refs.forEach((r) => grow([r.x, r.y]));
+    if (focus && box[0] < Infinity) {
+      const w = Math.max(box[2] - box[0], 300) * 1.5, h = Math.max(box[3] - box[1], 300) * 1.5;
+      setVB([(box[0] + box[2]) / 2 - w / 2, (box[1] + box[3]) / 2 - h / 2, w, h]);
+    } else setVB([...full]);
+  }
+  return { svg, show, zoomBy: (f) => zoomAt(f), reset: () => setVB([...full]) };
 }
