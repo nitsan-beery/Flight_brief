@@ -212,4 +212,3 @@ button:disabled{opacity:.4;cursor:default}
 .nt-card:not(.open) .nt-hd{border-bottom:none}
 .nt-card:not(.open)>:not(.nt-hd){display:none}
 .nt-cnt{font-size:12px;min-width:22px;text-align:center;padding:1px 7px;border-radius:10px;background:var(--card);color:var(--tx)}
-.nt-closures{font-size:11px;padding:1px 6px;border-radius:6px;color:var(--bad);border:1px solid var(--bad)}

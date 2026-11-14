@@ -116,8 +116,6 @@ function card(c, fleet) {
   icao.dir = 'ltr';
   hd.append(chev, icao);
   for (const r of c.roles) hd.append(el('span', 'nt-chip', ROLE_LABEL[r.role]));
-  const nClosing = c.shown.filter((n) => n.closures?.length).length;
-  if (nClosing) hd.append(el('span', 'nt-closures', `סגירות ${nClosing}`));
   const win = el('span', 'nt-win', windowLabel(c.roles));
   win.dir = 'ltr';
   const cnt = el('span', 'nt-cnt', String(c.shown.length));
