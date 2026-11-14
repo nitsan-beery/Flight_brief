@@ -580,9 +580,10 @@ const ROLE_ORDER = ['DEP', 'DEST', 'ALTN', 'ERA', 'TO_ALTN', 'EDTO'];
 /** סדר הקבוצות בתוך כרטיס. */
 // הסדר והכותרות נקבעו על ידי הבעלים (גרסאות 68–69). מסלולים בתוך "שדה", ‏RFFS בתוך "אחר".
 export const GROUPS = ['ad', 'taxi', 'apch', 'proc', 'other', 'company'];
-export const GROUP_LABEL = { ad: 'שדה', taxi: 'מסלולי הסעה וחניות', apch: 'מינימות', proc: 'SID/STAR', other: 'אחר', company: 'Company Notams' };
+export const GROUP_LABEL = { ad: 'שדה', taxi: 'מסלולי הסעה וחניות', apch: 'מינימות ותאורות גישה', proc: 'SID/STAR', other: 'אחר', company: 'Company Notams' };
 
 const AD_STRONG = /\bAD(?: [A-Z]{4})? (?:CLSD|CLOSED|NOT AVBL)\b|\bAERODROME (?:CLSD|CLOSED)\b|\bAD (?:HR|HOURS|OPR|OPS)\b|\bOPR HR|OPERATING HOURS|HOURS OF (?:OPERATION|SERVICE)|CLSD TO ALL|NOT (?:TO BE )?PLANNED AS (?:ALTN|ALTERNATE)/;
+const TAXI_LGT = /\bTWYS?\b|\bTAXIWAYS?\b|\bTXL\b|STOP-?BARS?|\bAPN\b|\bAPRON\b|\bSTANDS?\b|\bVDGS\b|\bDOCKING\b/;
 const APCH_WORDS = /\bIAP\b|\bIAC\b|\bAPCH\b|\bAPPROACH|\bMINIMA\b|\bMINIMUMS?\b|\bOCA|\bOCH\b|\bMDA\b|\bD[AH]\b|\bILS\b|\bLOC\b|\bGP\b|GLIDE|\bPAPI\b|\bALSF?\b|\bCIRCLING\b|\bMISSED\b|\bRNP\b|\bLNAV|\bLGT|\bLIGHT/;
 
 /** הקבוצה של NOTAM מוצג: נושא אחד, הראשון לפי הסדר. */
@@ -596,6 +597,8 @@ export function groupOf(n) {
   if ((s.has('sid') || s.has('star')) && (n.cat === 'SID/STAR' || /^(?:SID|STAR)\b/.test(first))) return 'proc';
   // ‏NOTAM שפותח במסלול הסעה או בחניה שייך להסעה, גם כשהוא מזכיר תאורה (AREA MARKED AND LGTD).
   if (/^(?:TWYS?|TAXIWAY|TXL|APN|APRON|(?:ACFT )?STANDS?|AFTER LDG)\b/.test(first)) return 'taxi';
+  // תאורה של מסלולי הסעה וחניות (STOP-BAR-LGT FOR TWY B1, ‏TWY CL LGT) – הסעה, לא תאורת גישה (נקבע על ידי הבעלים, גרסה 70).
+  if (TAXI_LGT.test(text) && /\bLGTD?\b|\bLIGHTS?\b|-LGT\b|STOP-?BAR/.test(text) && !/\bRWYS?\b|\bILS\b|\bAPCH\b|\bAPPROACH|\bPAPI\b|\bALSF?\b/.test(text)) return 'taxi';
   if (APCH_WORDS.test(text)) return 'apch';
   if ((s.has('twy') || s.has('stand')) && !/^RWYS?\b/.test(first)) return 'taxi';
   if (s.has('rwy')) return 'ad';

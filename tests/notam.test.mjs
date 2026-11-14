@@ -1,7 +1,7 @@
 // בדיקות לסינון NOTAM, על נתונים סינתטיים בלבד (CLAUDE.md: אסור תדריך אמיתי בריפו).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText, closuresOf } from '../js/notam.js';
+import { parseValid, parseSchedule, parseBulletin, flightContext, filterNotams, fleetFor, segmentsOf, displayText, closuresOf, groupOf } from '../js/notam.js';
 import { resolve } from '../js/notam-map.js';
 
 const T = (s) => Date.UTC(2000 + +s.slice(0, 2), +s.slice(2, 4) - 1, +s.slice(4, 6), +s.slice(6, 8), +s.slice(8, 10));
@@ -340,4 +340,12 @@ test('מפה: קטע לפי צומת, חניה בלי אפס מוביל, ומה 
   assert.deepEqual(r.missing, ['TWY Q9']);
   assert.deepEqual(r.whole, ['K']);
   assert.equal(r.lines.at(-1).label, 'RWY 10/28');
+});
+
+test('קבוצות: תאורה של מסלולי הסעה – הסעה; תאורת מסלול וגישה – מינימות ותאורות גישה; מסלול – שדה', () => {
+  const g = (text, subjects = []) => groupOf({ lines: [text], subjects });
+  assert.equal(g('STOP-BAR-LGT FOR TWY B1 THRU B9 U/S', ['twy', 'light']), 'taxi');
+  assert.equal(g('RWY 22L SEQUENCED FLG LGT U/S', ['rwy', 'light']), 'apch');
+  assert.equal(g('RWY 07C CLSD', ['rwy']), 'ad');
+  assert.equal(g('AD CAT 6 FOR FIRE FIGHTING', ['rffs']), 'other');
 });
