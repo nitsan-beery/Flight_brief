@@ -209,7 +209,8 @@ function card(c, fleet, pane) {
       for (const [n, item] of items) {
         item.querySelector('.nt-pin').hidden = false;
         item.classList.add('nt-mapitem');
-        item.addEventListener('click', () => { select(item); pane.show(c, [n], true); });
+        // לחיצה נוספת על ה-NOTAM שנבחר: בחזרה לכל השדה, בלי סימון (גרסה 80).
+        item.addEventListener('click', () => { if (item.classList.contains('on')) showAll(); else { select(item); pane.show(c, [n], true); } });
       }
     });
   }
