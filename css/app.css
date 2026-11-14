@@ -165,7 +165,7 @@ button:disabled{opacity:.4;cursor:default}
 .nt-icao{font-size:18px;font-weight:600}
 .nt-chip{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--card);color:var(--ac);border:1px solid var(--ln)}
 .nt-win{font-size:13px;color:var(--tx2);margin-inline-start:auto;font-variant-numeric:tabular-nums}
-.nt-grp{font-size:15px;font-weight:600;color:var(--tx);background:var(--card);text-align:center;padding:7px 14px;border-bottom:1px solid var(--ln)}
+.nt-grp{font-size:14px;font-weight:400;color:var(--tx);background:var(--card);text-align:center;padding:7px 14px;border-bottom:1px solid var(--ln)}
 .nt{padding:6px 14px 10px;border-bottom:1px solid var(--ln)}
 .nt-list>.nt:last-child{border-bottom:none}
 .nt-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
