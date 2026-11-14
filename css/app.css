@@ -1,7 +1,7 @@
 /* צבעים: בהיר, כהה לפי המכשיר, וכהה/בהיר שנבחר בכפתור (data-theme). requirements.md, 5.1.1. רקע אפור־כחלחל מגרסה 50. */
-:root{--bg:#e6ebf1;--sheet:#ffffff;--card:#f6f5f1;--fld:#ffffff;--tx:#1f1e1c;--tx2:#5f5e5a;--tx3:#888780;--ln:rgba(0,0,0,.12);--bx:rgba(0,0,0,.28);--ac:#185FA5;--ok:#3B6D11;--bad:#A32D2D;--warn:#8a5a00;--warn-bg:#fff4d6}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10151b;--sheet:#19202a;--card:#222b37;--fld:#19202a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595;--warn:#f0c060;--warn-bg:#3a2f14}}
-:root[data-theme="dark"]{--bg:#10151b;--sheet:#19202a;--card:#222b37;--fld:#19202a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595;--warn:#f0c060;--warn-bg:#3a2f14}
+:root{--bg:#e6ebf1;--sheet:#ffffff;--card:#f6f5f1;--ro:#fbfaf8;--fld:#ffffff;--tx:#1f1e1c;--tx2:#5f5e5a;--tx3:#888780;--ln:rgba(0,0,0,.12);--bx:rgba(0,0,0,.28);--ac:#185FA5;--ok:#3B6D11;--bad:#A32D2D;--warn:#8a5a00;--warn-bg:#fff4d6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10151b;--sheet:#19202a;--card:#222b37;--ro:#222b37;--fld:#19202a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595;--warn:#f0c060;--warn-bg:#3a2f14}}
+:root[data-theme="dark"]{--bg:#10151b;--sheet:#19202a;--card:#222b37;--ro:#222b37;--fld:#19202a;--tx:#f1efe8;--tx2:#b4b2a9;--tx3:#888780;--ln:rgba(255,255,255,.14);--bx:rgba(255,255,255,.3);--ac:#85B7EB;--ok:#97C459;--bad:#F09595;--warn:#f0c060;--warn-bg:#3a2f14}
 :root{color-scheme:light dark}
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{color-scheme:dark}
@@ -106,13 +106,13 @@ button:disabled{opacity:.4;cursor:default}
 .fs .lb{font-size:14px;color:var(--tx2);margin-bottom:4px;display:flex;align-items:center;gap:4px}
 .fs .heb{direction:rtl}
 /* שדה קבוע מהתדריך: אותה משבצת עם גבול כמו שדה OPT לקריאה בלבד (requirements.md, 5.1.1, גרסה 55) */
-.fs .v{font-size:18px;height:36px;line-height:34px;padding:0 9px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid var(--bx);border-radius:8px;background:var(--card);color:var(--tx2)}
+.fs .v{font-size:18px;height:36px;line-height:34px;padding:0 9px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid var(--bx);border-radius:8px;background:var(--ro);color:var(--tx2)}
 .fs .v.missing{font-size:15px;color:var(--bad)}
 .fs input{font:inherit;width:100%;background:var(--fld);color:var(--tx);border:1px solid var(--bx);border-radius:8px;height:36px;font-size:18px;padding:0 8px;font-variant-numeric:tabular-nums}
 .fs input:focus{border-color:var(--ac);outline:none}
 .fs input.low{color:var(--bad)}
 /* שדות OPT: לקריאה בלבד, מתמלאים רק מקובץ (requirements.md, 5.1.3) */
-.fs input:read-only{background:var(--card);color:var(--tx2);cursor:default}
+.fs input:read-only{background:var(--ro);color:var(--tx2);cursor:default}
 .fs input:read-only:focus{border-color:var(--bx)}
 /* שם באנגלית משמאל ושם בעברית מימין, לפי השפה (dir="auto"; requirements.md, 5.1.1) */
 .fs input.nm{font-size:16px;text-align:start;margin-bottom:6px}
