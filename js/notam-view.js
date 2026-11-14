@@ -54,7 +54,7 @@ function notamItem(n, reason, fleet) {
     pin.innerHTML = PIN;
     meta.append(pin);
   }
-  if (reason) meta.append(el('span', 'nt-why', REASON_LABEL[reason] ?? reason));
+  if (reason) { const why = el('span', 'nt-why', REASON_LABEL[reason] ?? reason); why.dir = 'rtl'; meta.append(why); }
   item.append(meta);
   if (reason) {
     const tx = el('div', 'nt-tx', n.lines.join('\n'));
@@ -181,7 +181,14 @@ function card(c, fleet) {
     const counts = {};
     for (const n of c.hidden) counts[n.reason] = (counts[n.reason] || 0) + 1;
     const det = el('details', 'nt-hidden');
-    const sum = el('summary', null, `הוסתרו ${c.hidden.length}: ${Object.entries(counts).map(([k, v]) => `${REASON_LABEL[k] ?? k} ${v}`).join(', ')}`);
+    // כל סיבה מבודדת (bdi), כדי שהמספר יופיע ליד הסיבה שלו גם כשהיא כוללת טקסט באנגלית: "PERM (…): 8 · סוג גישה לא מאושר: 3".
+    const sum = el('summary', null, `הוסתרו ${c.hidden.length}: `);
+    Object.entries(counts).forEach(([k, v], i) => {
+      if (i) sum.append(' · ');
+      const why = el('bdi', null, REASON_LABEL[k] ?? k);
+      why.dir = 'rtl';
+      sum.append(why, `: ${v}`);
+    });
     det.append(sum);
     det.addEventListener('toggle', () => {
       if (!det.open || det.dataset.built) return;

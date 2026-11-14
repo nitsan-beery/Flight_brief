@@ -657,7 +657,7 @@ export const REASON_LABEL = {
   mtow: 'MTOW מעל המטוס',
   cancel: 'ביטול מגבלה',
   navaid: 'עזר ניווט שאינו ILS',
-  perm: 'PERM ותיק (בדפיות Jeppesen)',
+  perm: 'PERM (מעודכן בדפיות Jeppesen)',
   restrict: 'מגבלת מוטה / Code שהמטוס עומד בה',
 };
 
