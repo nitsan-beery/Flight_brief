@@ -115,7 +115,8 @@ function card(c, fleet) {
   const icao = el('span', 'nt-icao', c.icao);
   icao.dir = 'ltr';
   hd.append(chev, icao);
-  for (const r of c.roles) hd.append(el('span', 'nt-chip', roleLabel(r)));
+  // ‏LTR, כדי ש-"3% ERA" יוצג עם האחוז משמאל.
+  for (const r of c.roles) { const chip = el('span', 'nt-chip', roleLabel(r)); if (r.pct) chip.dir = 'ltr'; hd.append(chip); }
   const win = el('span', 'nt-win', windowLabel(c.roles));
   win.dir = 'ltr';
   const cnt = el('span', 'nt-cnt', String(c.shown.length));

@@ -658,7 +658,7 @@ export const REASON_LABEL = {
   restrict: 'מגבלת מוטה / Code שהמטוס עומד בה',
 };
 
-/** התווית של תפקיד בכרטיס: "ERA 3%" עם האחוז מעמוד 1. */
-export const roleLabel = (r) => (r.pct ? `${ROLE_LABEL[r.role]} ${r.pct}%` : ROLE_LABEL[r.role]);
+/** התווית של תפקיד בכרטיס: "3% ERA" – האחוז מעמוד 1, משמאל למילה (נקבע על ידי הבעלים). */
+export const roleLabel = (r) => (r.pct ? `${r.pct}% ${ROLE_LABEL[r.role]}` : ROLE_LABEL[r.role]);
 
 export const ROLE_LABEL = { DEP: 'מוצא', DEST: 'יעד', TO_ALTN: 'T/O ALTN', ALTN: 'ALTN', ERA: 'ERA', EDTO: 'EDTO ALTN' };
